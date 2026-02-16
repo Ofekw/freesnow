@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import type { Resort } from '@/types';
 import { fmtElevation } from '@/utils/weather';
+import { useUnits } from '@/context/UnitsContext';
 import './ResortCard.css';
 
 interface Props {
@@ -11,6 +12,7 @@ interface Props {
 
 export function ResortCard({ resort, isFavorite, onToggleFavorite }: Props) {
   const navigate = useNavigate();
+  const { elev } = useUnits();
 
   function handleCardClick(e: React.MouseEvent) {
     if ((e.target as HTMLElement).closest('.resort-card__fav')) return;
@@ -36,13 +38,13 @@ export function ResortCard({ resort, isFavorite, onToggleFavorite }: Props) {
       </p>
       <div className="resort-card__stats">
         <span>
-          <strong>Base</strong> {fmtElevation(resort.elevation.base)}
+          <strong>Base</strong> {fmtElevation(resort.elevation.base, elev)}
         </span>
         <span>
-          <strong>Top</strong> {fmtElevation(resort.elevation.top)}
+          <strong>Top</strong> {fmtElevation(resort.elevation.top, elev)}
         </span>
         <span>
-          <strong>Vert</strong> {fmtElevation(resort.verticalDrop)}
+          <strong>Vert</strong> {fmtElevation(resort.verticalDrop, elev)}
         </span>
         {resort.acres && (
           <span>

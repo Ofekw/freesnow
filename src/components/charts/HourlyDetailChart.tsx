@@ -11,6 +11,7 @@ import {
 } from 'recharts';
 import type { HourlyMetrics } from '@/types';
 import { cmToIn } from '@/utils/weather';
+import { useUnits } from '@/context/UnitsContext';
 import { format, parseISO } from 'date-fns';
 
 interface Props {
@@ -18,15 +19,21 @@ interface Props {
 }
 
 export function HourlyDetailChart({ hourly }: Props) {
+  const { temp: tempUnit, snow: snowUnit } = useUnits();
+  const isImperial = tempUnit === 'F';
+
   const data = hourly.map((h) => ({
     time: format(parseISO(h.time), 'EEE ha'),
-    snow: +cmToIn(h.snowfall).toFixed(2),
-    rain: +(h.rain / 25.4).toFixed(2),
-    temp: Math.round(h.temperature * 9 / 5 + 32),
-    feels: Math.round(h.apparentTemperature * 9 / 5 + 32),
-    wind: Math.round(h.windSpeed * 0.621371),
-    gusts: Math.round(h.windGusts * 0.621371),
+    snow: isImperial ? +cmToIn(h.snowfall).toFixed(2) : +h.snowfall.toFixed(1),
+    rain: isImperial ? +(h.rain / 25.4).toFixed(2) : +h.rain.toFixed(1),
+    temp: isImperial ? Math.round(h.temperature * 9 / 5 + 32) : Math.round(h.temperature),
+    feels: isImperial ? Math.round(h.apparentTemperature * 9 / 5 + 32) : Math.round(h.apparentTemperature),
+    wind: isImperial ? Math.round(h.windSpeed * 0.621371) : Math.round(h.windSpeed),
+    gusts: isImperial ? Math.round(h.windGusts * 0.621371) : Math.round(h.windGusts),
   }));
+
+  const precipLabel = isImperial ? 'in' : snowUnit;
+  const tempLabel = `°${tempUnit}`;
 
   return (
     <div style={{ width: '100%', height: 300 }}>
@@ -61,10 +68,10 @@ export function HourlyDetailChart({ hourly }: Props) {
             }}
           />
           <Legend wrapperStyle={{ fontSize: 12 }} />
-          <Bar yAxisId="precip" dataKey="snow" name="Snow (in)" fill="#38bdf8" radius={[3, 3, 0, 0]} />
-          <Bar yAxisId="precip" dataKey="rain" name="Rain (in)" fill="#6366f1" radius={[3, 3, 0, 0]} />
-          <Line yAxisId="temp" type="monotone" dataKey="temp" name="Temp °F" stroke="#f59e0b" strokeWidth={2} dot={false} />
-          <Line yAxisId="temp" type="monotone" dataKey="feels" name="Feels °F" stroke="#f59e0b" strokeWidth={1} strokeDasharray="4 3" dot={false} />
+          <Bar yAxisId="precip" dataKey="snow" name={`Snow (${precipLabel})`} fill="#38bdf8" radius={[3, 3, 0, 0]} />
+          <Bar yAxisId="precip" dataKey="rain" name={`Rain (${precipLabel})`} fill="#6366f1" radius={[3, 3, 0, 0]} />
+          <Line yAxisId="temp" type="monotone" dataKey="temp" name={`Temp ${tempLabel}`} stroke="#f59e0b" strokeWidth={2} dot={false} />
+          <Line yAxisId="temp" type="monotone" dataKey="feels" name={`Feels ${tempLabel}`} stroke="#f59e0b" strokeWidth={1} strokeDasharray="4 3" dot={false} />
         </ComposedChart>
       </ResponsiveContainer>
     </div>

@@ -1,5 +1,6 @@
 import type { ElevationBand } from '@/types';
 import { fmtElevation } from '@/utils/weather';
+import { useUnits } from '@/context/UnitsContext';
 import './ElevationToggle.css';
 
 interface Props {
@@ -11,6 +12,7 @@ interface Props {
 const BANDS: ElevationBand[] = ['base', 'mid', 'top'];
 
 export function ElevationToggle({ value, onChange, elevations }: Props) {
+  const { elev } = useUnits();
   return (
     <div className="elev-toggle" role="radiogroup" aria-label="Elevation band">
       {BANDS.map((b) => (
@@ -22,7 +24,7 @@ export function ElevationToggle({ value, onChange, elevations }: Props) {
           onClick={() => onChange(b)}
         >
           <span className="elev-toggle__label">{b.charAt(0).toUpperCase() + b.slice(1)}</span>
-          <span className="elev-toggle__elev">{fmtElevation(elevations[b])}</span>
+          <span className="elev-toggle__elev">{fmtElevation(elevations[b], elev)}</span>
         </button>
       ))}
     </div>

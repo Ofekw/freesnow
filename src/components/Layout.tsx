@@ -1,7 +1,9 @@
 import { Outlet, Link } from 'react-router-dom';
+import { useUnits } from '@/context/UnitsContext';
 import './Layout.css';
 
 export function Layout() {
+  const { units, toggle, temp, elev } = useUnits();
 
   return (
     <div className="layout">
@@ -11,7 +13,14 @@ export function Layout() {
             <SnowflakeIcon />
             <span>FreeSnow</span>
           </Link>
-
+          <button
+            className="header__units-toggle"
+            onClick={toggle}
+            aria-label={`Switch to ${units === 'imperial' ? 'metric' : 'imperial'} units`}
+            title={`Switch to ${units === 'imperial' ? 'metric' : 'imperial'} units`}
+          >
+            °{temp} / {elev}
+          </button>
         </div>
       </header>
 

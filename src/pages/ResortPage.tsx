@@ -10,6 +10,7 @@ import { HourlyDetailChart } from '@/components/charts/HourlyDetailChart';
 import { FreezingLevelChart } from '@/components/charts/FreezingLevelChart';
 import { UVIndexChart } from '@/components/charts/UVIndexChart';
 import { weatherDescription, fmtTemp, fmtElevation, fmtSnow } from '@/utils/weather';
+import { useUnits } from '@/context/UnitsContext';
 import { format } from 'date-fns';
 import type { ElevationBand, BandForecast, DailyMetrics } from '@/types';
 import './ResortPage.css';
@@ -18,7 +19,8 @@ export function ResortPage() {
   const { slug } = useParams<{ slug: string }>();
   const resort = useMemo(() => getResortBySlug(slug ?? ''), [slug]);
   const { forecast, loading, error, refetch } = useForecast(resort);
-  const { toggle, isFav } = useFavorites();
+  const { toggle: toggleFav, isFav } = useFavorites();
+  const { temp, elev, snow } = useUnits();
   const [band, setBand] = useState<ElevationBand>('mid');
 
   // Recent 14-day snowfall via forecast endpoint's past_days (no archive lag)
@@ -74,7 +76,7 @@ export function ResortPage() {
         </div>
         <button
           className={`resort-page__fav ${isFav(resort.slug) ? 'active' : ''}`}
-          onClick={() => toggle(resort.slug)}
+          onClick={() => toggleFav(resort.slug)}
           aria-label={isFav(resort.slug) ? 'Remove from favorites' : 'Add to favorites'}
         >
           {isFav(resort.slug) ? '★' : '☆'}
@@ -85,19 +87,19 @@ export function ResortPage() {
       <section className="resort-page__stats">
         <div className="stat">
           <span className="stat__label">Base</span>
-          <span className="stat__value">{fmtElevation(resort.elevation.base)}</span>
+          <span className="stat__value">{fmtElevation(resort.elevation.base, elev)}</span>
         </div>
         <div className="stat">
           <span className="stat__label">Mid</span>
-          <span className="stat__value">{fmtElevation(resort.elevation.mid)}</span>
+          <span className="stat__value">{fmtElevation(resort.elevation.mid, elev)}</span>
         </div>
         <div className="stat">
           <span className="stat__label">Top</span>
-          <span className="stat__value">{fmtElevation(resort.elevation.top)}</span>
+          <span className="stat__value">{fmtElevation(resort.elevation.top, elev)}</span>
         </div>
         <div className="stat">
           <span className="stat__label">Vertical</span>
-          <span className="stat__value">{fmtElevation(resort.verticalDrop)}</span>
+          <span className="stat__value">{fmtElevation(resort.verticalDrop, elev)}</span>
         </div>
         {resort.lifts && (
           <div className="stat">
@@ -135,7 +137,7 @@ export function ResortPage() {
         <>
           {/* Daily summary row */}
           <section className="resort-page__daily-summary">
-            <h2 className="section-title">7-Day Forecast — {band.toUpperCase()} ({fmtElevation(bandData.elevation)})</h2>
+            <h2 className="section-title">7-Day Forecast — {band.toUpperCase()} ({fmtElevation(bandData.elevation, elev)})</h2>
             <div className="daily-cards">
               {bandData.daily.map((d) => {
                 const desc = weatherDescription(d.weatherCode);
@@ -148,10 +150,10 @@ export function ResortPage() {
                       {desc.icon}
                     </span>
                     <span className="day-card__temps">
-                      {fmtTemp(d.temperatureMax)} / {fmtTemp(d.temperatureMin)}
+                      {fmtTemp(d.temperatureMax, temp)} / {fmtTemp(d.temperatureMin, temp)}
                     </span>
                     <span className="day-card__snow">
-                      {d.snowfallSum > 0 ? `❄️ ${fmtSnow(d.snowfallSum)}` : '—'}
+                      {d.snowfallSum > 0 ? `❄️ ${fmtSnow(d.snowfallSum, snow)}` : '—'}
                     </span>
                   </div>
                 );
@@ -198,11 +200,12 @@ export function ResortPage() {
 }
 
 function RecentSnowTable({ days }: { days: DailyMetrics[] }) {
+  const { temp, snow: snowUnit } = useUnits();
   const totalSnow = days.reduce((s, d) => s + d.snowfallSum, 0);
   return (
     <div className="recent-snow">
       <p className="recent-snow__total">
-        Total: <strong>{fmtSnow(totalSnow)}</strong> over {days.length} days
+        Total: <strong>{fmtSnow(totalSnow, snowUnit)}</strong> over {days.length} days
       </p>
       <div className="recent-snow__bars">
         {days.map((d) => {
@@ -221,10 +224,10 @@ function RecentSnowTable({ days }: { days: DailyMetrics[] }) {
                 />
               </div>
               <span className="recent-snow__amount">
-                {snow > 0 ? fmtSnow(snow) : '—'}
+                {snow > 0 ? fmtSnow(snow, snowUnit) : '—'}
               </span>
               <span className="recent-snow__temps">
-                {fmtTemp(d.temperatureMin)} / {fmtTemp(d.temperatureMax)}
+                {fmtTemp(d.temperatureMin, temp)} / {fmtTemp(d.temperatureMax, temp)}
               </span>
             </div>
           );

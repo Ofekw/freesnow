@@ -8,6 +8,7 @@ import {
   Tooltip,
 } from 'recharts';
 import type { HourlyMetrics } from '@/types';
+import { useUnits } from '@/context/UnitsContext';
 import { format, parseISO } from 'date-fns';
 
 interface Props {
@@ -15,9 +16,14 @@ interface Props {
 }
 
 export function FreezingLevelChart({ hourly }: Props) {
+  const { elev } = useUnits();
+  const isImperial = elev === 'ft';
+
   const data = hourly.map((h) => ({
     time: format(parseISO(h.time), 'EEE ha'),
-    freezeAlt: Math.round(h.freezingLevelHeight * 3.28084), // m → ft
+    freezeAlt: isImperial
+      ? Math.round(h.freezingLevelHeight * 3.28084)
+      : Math.round(h.freezingLevelHeight),
   }));
 
   return (
@@ -35,7 +41,7 @@ export function FreezingLevelChart({ hourly }: Props) {
             tick={{ fill: '#94a3b8', fontSize: 11 }}
             axisLine={{ stroke: '#475569' }}
             label={{
-              value: 'ft',
+              value: elev,
               angle: -90,
               position: 'insideLeft',
               fill: '#94a3b8',
@@ -50,7 +56,7 @@ export function FreezingLevelChart({ hourly }: Props) {
               color: '#f1f5f9',
               fontSize: 13,
             }}
-            formatter={(v: number) => [`${v.toLocaleString()} ft`, 'Freeze Alt']}
+            formatter={(v: number) => [`${v.toLocaleString()} ${elev}`, 'Freeze Alt']}
           />
           <Area
             type="monotone"

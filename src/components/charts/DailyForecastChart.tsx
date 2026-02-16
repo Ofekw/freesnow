@@ -11,6 +11,7 @@ import {
 } from 'recharts';
 import type { DailyMetrics } from '@/types';
 import { cmToIn } from '@/utils/weather';
+import { useUnits } from '@/context/UnitsContext';
 import { format, parseISO } from 'date-fns';
 
 interface Props {
@@ -18,16 +19,22 @@ interface Props {
 }
 
 export function DailyForecastChart({ daily }: Props) {
+  const { temp: tempUnit, snow: snowUnit } = useUnits();
+  const isImperial = tempUnit === 'F';
+
   const data = daily.map((d) => ({
     date: format(parseISO(d.date), 'EEE M/d'),
-    snow: +cmToIn(d.snowfallSum).toFixed(1),
-    rain: +(d.rainSum / 25.4).toFixed(2),
-    high: Math.round(d.temperatureMax * 9 / 5 + 32),
-    low: Math.round(d.temperatureMin * 9 / 5 + 32),
-    feelsHigh: Math.round(d.apparentTemperatureMax * 9 / 5 + 32),
-    feelsLow: Math.round(d.apparentTemperatureMin * 9 / 5 + 32),
+    snow: isImperial ? +cmToIn(d.snowfallSum).toFixed(1) : +d.snowfallSum.toFixed(1),
+    rain: isImperial ? +(d.rainSum / 25.4).toFixed(2) : +d.rainSum.toFixed(1),
+    high: isImperial ? Math.round(d.temperatureMax * 9 / 5 + 32) : Math.round(d.temperatureMax),
+    low: isImperial ? Math.round(d.temperatureMin * 9 / 5 + 32) : Math.round(d.temperatureMin),
+    feelsHigh: isImperial ? Math.round(d.apparentTemperatureMax * 9 / 5 + 32) : Math.round(d.apparentTemperatureMax),
+    feelsLow: isImperial ? Math.round(d.apparentTemperatureMin * 9 / 5 + 32) : Math.round(d.apparentTemperatureMin),
     uv: d.uvIndexMax,
   }));
+
+  const precipLabel = isImperial ? 'in' : snowUnit;
+  const tempLabel = `°${tempUnit}`;
 
   return (
     <div style={{ width: '100%', height: 320 }}>
@@ -44,14 +51,14 @@ export function DailyForecastChart({ daily }: Props) {
             orientation="left"
             tick={{ fill: '#94a3b8', fontSize: 12 }}
             axisLine={{ stroke: '#475569' }}
-            label={{ value: 'in', angle: -90, position: 'insideLeft', fill: '#94a3b8', fontSize: 11 }}
+            label={{ value: precipLabel, angle: -90, position: 'insideLeft', fill: '#94a3b8', fontSize: 11 }}
           />
           <YAxis
             yAxisId="temp"
             orientation="right"
             tick={{ fill: '#94a3b8', fontSize: 12 }}
             axisLine={{ stroke: '#475569' }}
-            label={{ value: '°F', angle: 90, position: 'insideRight', fill: '#94a3b8', fontSize: 11 }}
+            label={{ value: tempLabel, angle: 90, position: 'insideRight', fill: '#94a3b8', fontSize: 11 }}
           />
           <Tooltip
             contentStyle={{
@@ -63,10 +70,10 @@ export function DailyForecastChart({ daily }: Props) {
             }}
           />
           <Legend wrapperStyle={{ fontSize: 12, color: '#94a3b8' }} />
-          <Bar yAxisId="precip" dataKey="snow" name="Snow (in)" fill="#38bdf8" radius={[4, 4, 0, 0]} />
-          <Bar yAxisId="precip" dataKey="rain" name="Rain (in)" fill="#6366f1" radius={[4, 4, 0, 0]} />
-          <Line yAxisId="temp" type="monotone" dataKey="high" name="High °F" stroke="#f59e0b" strokeWidth={2} dot={false} />
-          <Line yAxisId="temp" type="monotone" dataKey="low" name="Low °F" stroke="#3b82f6" strokeWidth={2} dot={false} />
+          <Bar yAxisId="precip" dataKey="snow" name={`Snow (${precipLabel})`} fill="#38bdf8" radius={[4, 4, 0, 0]} />
+          <Bar yAxisId="precip" dataKey="rain" name={`Rain (${precipLabel})`} fill="#6366f1" radius={[4, 4, 0, 0]} />
+          <Line yAxisId="temp" type="monotone" dataKey="high" name={`High ${tempLabel}`} stroke="#f59e0b" strokeWidth={2} dot={false} />
+          <Line yAxisId="temp" type="monotone" dataKey="low" name={`Low ${tempLabel}`} stroke="#3b82f6" strokeWidth={2} dot={false} />
           <Line yAxisId="temp" type="monotone" dataKey="feelsHigh" name="Feels High" stroke="#f59e0b" strokeWidth={1} strokeDasharray="4 3" dot={false} />
           <Line yAxisId="temp" type="monotone" dataKey="feelsLow" name="Feels Low" stroke="#3b82f6" strokeWidth={1} strokeDasharray="4 3" dot={false} />
         </ComposedChart>
