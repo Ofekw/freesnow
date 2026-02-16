@@ -1,14 +1,37 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { Outlet } from 'react-router-dom';
 import { useUnits } from '@/context/UnitsContext';
-import { useTimezone, TZ_OPTIONS } from '@/context/TimezoneContext';
+import { useTimezone, TZ_OPTIONS, getUtcOffset } from '@/context/TimezoneContext';
 import './Layout.css';
 
 export function Layout() {
   const { units, toggle, temp, elev } = useUnits();
   const { tzRaw, tzLabel, setTz } = useTimezone();
   const [tzOpen, setTzOpen] = useState(false);
+  const [tzSearch, setTzSearch] = useState('');
   const tzRef = useRef<HTMLDivElement>(null);
+  const searchRef = useRef<HTMLInputElement>(null);
+
+  // Compute UTC offsets once (they only change with DST, fine to recompute on render)
+  const tzWithOffsets = useMemo(
+    () =>
+      TZ_OPTIONS.map((o) => ({
+        ...o,
+        offset: o.value ? `UTC${getUtcOffset(o.value)}` : '',
+      })),
+    [],
+  );
+
+  const filteredTz = useMemo(() => {
+    if (!tzSearch.trim()) return tzWithOffsets;
+    const q = tzSearch.toLowerCase();
+    return tzWithOffsets.filter(
+      (o) =>
+        o.label.toLowerCase().includes(q) ||
+        o.value.toLowerCase().includes(q) ||
+        o.offset.toLowerCase().includes(q),
+    );
+  }, [tzSearch, tzWithOffsets]);
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -20,6 +43,14 @@ export function Layout() {
     }
     document.addEventListener('mousedown', handleClick);
     return () => document.removeEventListener('mousedown', handleClick);
+  }, [tzOpen]);
+
+  // Auto-focus search when dropdown opens
+  useEffect(() => {
+    if (tzOpen) {
+      setTzSearch('');
+      requestAnimationFrame(() => searchRef.current?.focus());
+    }
   }, [tzOpen]);
 
   return (
@@ -44,18 +75,34 @@ export function Layout() {
             🌐 {tzLabel}
           </button>
           {tzOpen && (
-            <ul className="tz-picker__dropdown">
-              {TZ_OPTIONS.map((o) => (
-                <li key={o.value}>
-                  <button
-                    className={`tz-picker__option ${tzRaw === o.value ? 'active' : ''}`}
-                    onClick={() => { setTz(o.value); setTzOpen(false); }}
-                  >
-                    {o.label}
-                  </button>
-                </li>
-              ))}
-            </ul>
+            <div className="tz-picker__dropdown">
+              <div className="tz-picker__search-wrap">
+                <input
+                  ref={searchRef}
+                  className="tz-picker__search"
+                  type="text"
+                  placeholder="Search timezone…"
+                  value={tzSearch}
+                  onChange={(e) => setTzSearch(e.target.value)}
+                />
+              </div>
+              <ul className="tz-picker__list">
+                {filteredTz.map((o) => (
+                  <li key={o.value}>
+                    <button
+                      className={`tz-picker__option ${tzRaw === o.value ? 'active' : ''}`}
+                      onClick={() => { setTz(o.value); setTzOpen(false); }}
+                    >
+                      <span>{o.label}</span>
+                      {o.offset && <span className="tz-picker__offset">{o.offset}</span>}
+                    </button>
+                  </li>
+                ))}
+                {filteredTz.length === 0 && (
+                  <li className="tz-picker__empty">No matches</li>
+                )}
+              </ul>
+            </div>
           )}
         </div>
       </div>
