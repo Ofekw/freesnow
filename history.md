@@ -1,0 +1,248 @@
+# FreeSnow — Implementation History
+
+A chronological log of all implementation work, decisions, and changes made during the build of FreeSnow.
+
+---
+
+## Phase 1: Project Initialization
+
+### Scaffolding
+- Created a Vite 6 + React 19 + TypeScript 5.7 project using Bun 1.3.9
+- Installed dependencies: `react`, `react-dom`, `react-router-dom@7`, `recharts`, `date-fns@4`, `vite-plugin-pwa`, `workbox-*`
+- Configured path alias `@/*` → `src/*` in `tsconfig.json` and `vite.config.ts`
+- Set up PWA manifest and service worker (StaleWhileRevalidate caching via Workbox)
+- Created dark theme CSS with custom properties (`--color-bg: #0f172a`, `--color-surface: #1e293b`, `--color-accent: #38bdf8`, etc.)
+
+### Data Layer
+- Defined all TypeScript interfaces in `src/types.ts`: `Resort`, `HourlyMetrics`, `DailyMetrics`, `BandForecast`, `ResortForecast`, `ElevationBand`
+- Built `src/data/openmeteo.ts` with `fetchForecast()` and `fetchHistorical()` — both hit Open-Meteo's free API (no key needed)
+- Created `src/data/resorts.ts` with 31 curated North American ski resorts (CO, UT, CA, MT, WY, VT, NH, WA, OR, BC, AB) including coordinates, elevations, vertical drop, lifts, and acres
+- Built `src/data/favorites.ts` for localStorage-based favorites management
+- Created `src/hooks/useWeather.ts` (`useForecast`, `useHistorical`) and `src/hooks/useFavorites.ts`
+
+### Utility Layer
+- `src/utils/weather.ts`: Unit conversion functions (`fmtTemp`, `fmtElevation`, `fmtSnow`, `cmToIn`) and WMO weather code → emoji + label mapping (`weatherDescription`)
+
+---
+
+## Phase 2: Core UI
+
+### App Shell & Routing
+- `src/main.tsx`: Entry point wrapping App in providers and `BrowserRouter`
+- `src/App.tsx`: Routes — `/` → HomePage, `/resort/:slug` → ResortPage
+- `src/components/Layout.tsx`: App layout with `<Outlet>`, footer with Open-Meteo attribution
+
+### Home Page (`src/pages/HomePage.tsx`)
+- Search bar filtering resorts by name
+- Resorts grouped by region (state/province)
+- Resort cards (`src/components/ResortCard.tsx`) with name, region, elevation, favorite toggle
+
+### Resort Detail Page (`src/pages/ResortPage.tsx`)
+- Header with resort name, region, website link, favorite star
+- Quick stats row (base/mid/top elevation, vertical drop, lifts, acres)
+- Elevation band toggle (`src/components/ElevationToggle.tsx`) — Base/Mid/Top segmented control
+- 7-day forecast day cards (weather icon, high/low, snowfall)
+- Refresh button
+
+### Chart Components
+- `DailyForecastChart.tsx` — ComposedChart: snow + rain bars with high/low/feels-like temperature lines, dual Y-axes
+- `HourlyDetailChart.tsx` — ComposedChart: hourly snow + rain + temp + feels-like (72 hours)
+- `UVIndexChart.tsx` — BarChart with Cell-based per-bar coloring by UV severity level
+- `FreezingLevelChart.tsx` — AreaChart showing freezing altitude over time
+- `SnowHistoryChart.tsx` — Historical snowfall by month (multi-season)
+
+---
+
+## Phase 3: Favorites Redesign
+
+### Removed Dedicated Favorites Tab
+- Originally had a separate `/favorites` route — removed it
+- Favorites section now displayed inline at the top of the Home Page
+
+### FavoriteCard Component (`src/components/FavoriteCard.tsx`)
+- Richer card showing forecast summary for favorited resorts
+- Displays next 3 days: snowfall + high/low temps
+- Clickable — navigates to resort detail page
+- Fetches its own forecast data on mount
+
+### Bug Fixes
+- **Archive API lag**: Open-Meteo archive endpoint has ~5 day delay for recent data. Switched recent snowfall to use the forecast endpoint's `past_days` parameter instead.
+- **Variable name collision**: `snow` from `useUnits()` conflicted with snowfall value variable in `RecentSnowTable` → renamed to `snowUnit`.
+- **Toggle name collision**: `toggle` from `useFavorites()` conflicted in ResortPage → renamed to `toggleFav`.
+
+---
+
+## Phase 4: Imperial / Metric Toggle
+
+### UnitsContext (`src/context/UnitsContext.tsx`)
+- Created `UnitSystem` type: `'imperial' | 'metric'`
+- Context provides: `{ units, toggle, temp, elev, snow }` (derived display units)
+- Persisted to localStorage key `freesnow_units`
+- Wired through all components and chart components
+
+### Floating FAB Button
+- Added to `Layout.tsx` as a fixed-position pill button in the top-right corner
+- Shows current units (e.g., `°F / ft` or `°C / m`)
+- Click toggles between imperial and metric
+
+---
+
+## Phase 5: Header Banner Removal
+
+- Removed the static header/banner component
+- Units FAB now floats freely at the top-right as a fixed-position element
+- Cleaner look — no wasted vertical space
+
+---
+
+## Phase 6: Timezone Support
+
+### TimezoneContext (`src/context/TimezoneContext.tsx`)
+- `TZ_OPTIONS` array: 13 curated North American timezones + UTC
+- Each option has IANA key, display label, and reference city
+- `getUtcOffset()` helper computes live UTC offset for any IANA timezone
+- Context provides: `{ tz, tzRaw, tzLabel, setTz, fmtDate }`
+- `fmtDate` uses `Intl.DateTimeFormat` with the selected timezone (no date-fns needed for display)
+- Persisted to localStorage key `freesnow_tz`
+
+### Timezone Picker UI (Layout.tsx)
+- Second FAB button (`🌐 Browser`) in the top-right FAB group
+- Click opens a dropdown with:
+  - Search input for filtering timezones
+  - List of timezone options with UTC offset badges (e.g., `UTC-7`)
+  - Click-outside-to-close behavior
+- All API calls pass the selected timezone to Open-Meteo
+- All date formatting uses the selected timezone
+
+### Unicode Bug Fix
+- `\u00b0` and `\ud83c\udf10` escaped sequences in JSX rendered as literal backslash strings
+- Replaced with actual `°` and `🌐` characters
+
+---
+
+## Phase 7: Resort Detail Page Redesign
+
+### New Chart Components
+- **`HourlySnowChart.tsx`** — Bar chart showing hourly snowfall for a single selected day. Displays total snowfall for the day. Uses recharts BarChart with hour labels.
+- **`RecentSnowChart.tsx`** — Past 14-day snowfall visualization using ComposedChart. Shows daily snowfall bars + cumulative total dashed line + faint high/low temperature lines. Dual Y-axes (snow left, temp right).
+
+### Interactive Day Selection
+- Added `selectedDayIdx` state to ResortPage (default: 0)
+- Day cards are now `<button>` elements — clicking selects a day
+- Selected card gets accent border glow (`.day-card--selected`)
+- Selected day drives:
+  - HourlySnowChart (hourly snow bars for that day)
+  - HourlyDetailChart (detailed conditions for that day)
+  - FreezingLevelChart (freezing level for that day)
+
+### Reorganized Sections
+1. **Snowfall Section** — Section header with 7-day total badge → interactive day cards → 7-Day Overview chart → Hourly Snow breakdown for selected day
+2. **Detailed Conditions** — Hourly detail chart for the selected day
+3. **Conditions Grid** — UV Index + Freezing Level side-by-side in a responsive 2-column grid
+4. **Recent Snowfall** — RecentSnowChart replaces old RecentSnowTable
+
+### CSS Updates
+- Added `.day-card--selected` styles (accent border, subtle glow, background tint)
+- Added hover/press transition states for day cards
+- Added `.section-subtitle` for secondary headings
+- Added `.resort-page__conditions-grid` (2-column on desktop, 1-column on mobile ≤768px)
+- Added `.resort-page__snow-section-header` with week-total badge
+- Removed all `.recent-snow__*` table styles
+
+### Section Reordering (follow-up)
+- Moved 7-Day Overview chart to be first thing after day cards
+- Hourly Snow breakdown follows the overview
+- Hourly detail chart is first in Detailed Conditions section
+
+### Chart Alignment Fix (DailyForecastChart)
+- Bars and temperature lines were misaligned due to side-by-side bar grouping shifting individual bars away from tick centers
+- Tried `scale="point"` with `padding` — broke bar centering
+- Tried `stackId` — made bars too wide and overlapping
+- Final solution: `barCategoryGap="15%"` with `maxBarSize={30}` to keep bars centered and appropriately sized
+
+---
+
+## Phase 8: Footer & Open Source Links
+
+- Updated footer text: "open-source" now links to `https://github.com/Ofekw/freesnow`
+- Added "Submit Feedback" button linking to `https://github.com/Ofekw/freesnow/issues`
+- Styled as an outlined accent pill button that fills on hover
+
+---
+
+## Current File Inventory
+
+```
+src/
+├── main.tsx
+├── App.tsx
+├── types.ts
+├── components/
+│   ├── Layout.tsx / Layout.css
+│   ├── ResortCard.tsx / ResortCard.css
+│   ├── FavoriteCard.tsx / FavoriteCard.css
+│   ├── ElevationToggle.tsx / ElevationToggle.css
+│   └── charts/
+│       ├── DailyForecastChart.tsx
+│       ├── HourlyDetailChart.tsx
+│       ├── HourlySnowChart.tsx       ← NEW (Phase 7)
+│       ├── RecentSnowChart.tsx       ← NEW (Phase 7)
+│       ├── FreezingLevelChart.tsx
+│       ├── UVIndexChart.tsx
+│       └── SnowHistoryChart.tsx
+├── context/
+│   ├── UnitsContext.tsx
+│   └── TimezoneContext.tsx
+├── data/
+│   ├── resorts.ts                    (31 resorts)
+│   ├── openmeteo.ts
+│   └── favorites.ts
+├── hooks/
+│   ├── useWeather.ts
+│   └── useFavorites.ts
+├── pages/
+│   ├── HomePage.tsx / HomePage.css
+│   ├── ResortPage.tsx / ResortPage.css
+│   └── FavoritesPage.tsx / FavoritesPage.css  (legacy, unused)
+├── utils/
+│   └── weather.ts
+└── styles/
+```
+
+## Known Technical Notes
+
+- **Bun PATH**: Must add `$env:PATH = "$env:USERPROFILE\.bun\bin;$env:PATH"` each PowerShell session
+- **Open-Meteo archive lag**: ~5 days behind. Use forecast endpoint's `past_days` for recent history.
+- **Timezone handling**: All API calls pass the user's selected IANA timezone. All display formatting uses `Intl.DateTimeFormat` with that timezone.
+- **PWA caching**: StaleWhileRevalidate via Workbox — serves cached response immediately, refreshes in background.
+
+## Status vs Plan
+
+| Feature | Status |
+|---------|--------|
+| Project scaffolding (Vite + React + TS + Bun) | ✅ Complete |
+| PWA (service worker, installable) | ✅ Complete |
+| Dark theme + responsive CSS | ✅ Complete |
+| Resort catalog (31 NA resorts) | ✅ Complete |
+| Open-Meteo API integration | ✅ Complete |
+| Home page (search, grouped regions) | ✅ Complete |
+| Favorites (localStorage, inline on home) | ✅ Complete |
+| FavoriteCard with forecast preview | ✅ Complete |
+| Resort detail — header, stats, band toggle | ✅ Complete |
+| 7-day day cards (interactive selection) | ✅ Complete |
+| DailyForecastChart (snow/rain/temp) | ✅ Complete |
+| HourlyDetailChart (72h → per-day) | ✅ Complete |
+| HourlySnowChart (per-day hourly snow) | ✅ Complete |
+| UV Index chart | ✅ Complete |
+| Freezing Level chart | ✅ Complete |
+| RecentSnowChart (past 14 days) | ✅ Complete |
+| SnowHistoryChart (multi-season) | ✅ Complete |
+| Imperial / Metric toggle | ✅ Complete |
+| Timezone picker (13 NA zones + UTC) | ✅ Complete |
+| GitHub repo link + feedback button | ✅ Complete |
+| Map-based resort browser | 🔲 Not started |
+| Global resort coverage | 🔲 Not started |
+| Snow report / current conditions | 🔲 Not started |
+| Webcam links | 🔲 Not started |
+| Backend (accounts, alerts) | 🔲 Not started |
+| Trail map overlays | 🔲 Not started |
