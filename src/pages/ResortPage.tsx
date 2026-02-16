@@ -11,7 +11,7 @@ import { FreezingLevelChart } from '@/components/charts/FreezingLevelChart';
 import { UVIndexChart } from '@/components/charts/UVIndexChart';
 import { weatherDescription, fmtTemp, fmtElevation, fmtSnow } from '@/utils/weather';
 import { useUnits } from '@/context/UnitsContext';
-import { format } from 'date-fns';
+import { useTimezone } from '@/context/TimezoneContext';
 import type { ElevationBand, BandForecast, DailyMetrics } from '@/types';
 import './ResortPage.css';
 
@@ -21,6 +21,7 @@ export function ResortPage() {
   const { forecast, loading, error, refetch } = useForecast(resort);
   const { toggle: toggleFav, isFav } = useFavorites();
   const { temp, elev, snow } = useUnits();
+  const { tz, fmtDate } = useTimezone();
   const [band, setBand] = useState<ElevationBand>('mid');
 
   // Recent 14-day snowfall via forecast endpoint's past_days (no archive lag)
@@ -31,7 +32,7 @@ export function ResortPage() {
     if (!resort) return;
     let cancelled = false;
     setHistLoading(true);
-    fetchForecast(resort.lat, resort.lon, resort.elevation.mid, 'mid', 1, 14)
+    fetchForecast(resort.lat, resort.lon, resort.elevation.mid, 'mid', 1, 14, tz)
       .then((result) => {
         if (!cancelled) {
           // past_days data comes first; exclude today and future
@@ -42,7 +43,7 @@ export function ResortPage() {
       .catch(() => { /* ignore */ })
       .finally(() => { if (!cancelled) setHistLoading(false); });
     return () => { cancelled = true; };
-  }, [resort]);
+  }, [resort, tz]);
 
   if (!resort) {
     return (
@@ -144,7 +145,7 @@ export function ResortPage() {
                 return (
                   <div key={d.date} className="day-card">
                     <span className="day-card__date">
-                      {format(new Date(d.date), 'EEE')}
+                      {fmtDate(d.date + 'T12:00:00', { weekday: 'short' })}
                     </span>
                     <span className="day-card__icon" title={desc.label}>
                       {desc.icon}

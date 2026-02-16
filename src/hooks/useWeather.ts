@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import type { Resort, ResortForecast, HistoricalSnowDay } from '@/types';
 import { fetchForecast, fetchHistorical } from '@/data/openmeteo';
+import { useTimezone } from '@/context/TimezoneContext';
 
 /* ── useForecast ─────────────────────────────────── */
 
@@ -15,6 +16,7 @@ export function useForecast(resort: Resort | undefined): UseForecastResult {
   const [forecast, setForecast] = useState<ResortForecast | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { tz } = useTimezone();
 
   const load = useCallback(async () => {
     if (!resort) return;
@@ -22,9 +24,9 @@ export function useForecast(resort: Resort | undefined): UseForecastResult {
     setError(null);
     try {
       const [base, mid, top] = await Promise.all([
-        fetchForecast(resort.lat, resort.lon, resort.elevation.base, 'base'),
-        fetchForecast(resort.lat, resort.lon, resort.elevation.mid, 'mid'),
-        fetchForecast(resort.lat, resort.lon, resort.elevation.top, 'top'),
+        fetchForecast(resort.lat, resort.lon, resort.elevation.base, 'base', 7, 0, tz),
+        fetchForecast(resort.lat, resort.lon, resort.elevation.mid, 'mid', 7, 0, tz),
+        fetchForecast(resort.lat, resort.lon, resort.elevation.top, 'top', 7, 0, tz),
       ]);
       setForecast({
         resort,
@@ -38,7 +40,7 @@ export function useForecast(resort: Resort | undefined): UseForecastResult {
     } finally {
       setLoading(false);
     }
-  }, [resort]);
+  }, [resort, tz]);
 
   useEffect(() => {
     void load();
@@ -63,6 +65,7 @@ export function useHistorical(
   const [data, setData] = useState<HistoricalSnowDay[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { tz } = useTimezone();
 
   useEffect(() => {
     if (!resort) return;
@@ -76,6 +79,7 @@ export function useHistorical(
       resort.elevation.mid,
       startDate,
       endDate,
+      tz,
     )
       .then((days) => {
         if (!cancelled) setData(days);
@@ -91,7 +95,7 @@ export function useHistorical(
     return () => {
       cancelled = true;
     };
-  }, [resort, startDate, endDate]);
+  }, [resort, startDate, endDate, tz]);
 
   return { data, loading, error };
 }

@@ -9,7 +9,7 @@ import {
 } from 'recharts';
 import type { HourlyMetrics } from '@/types';
 import { useUnits } from '@/context/UnitsContext';
-import { format, parseISO } from 'date-fns';
+import { useTimezone } from '@/context/TimezoneContext';
 
 interface Props {
   hourly: HourlyMetrics[];
@@ -17,10 +17,11 @@ interface Props {
 
 export function FreezingLevelChart({ hourly }: Props) {
   const { elev } = useUnits();
+  const { fmtDate } = useTimezone();
   const isImperial = elev === 'ft';
 
   const data = hourly.map((h) => ({
-    time: format(parseISO(h.time), 'EEE ha'),
+    time: fmtDate(h.time, { weekday: 'short', hour: 'numeric' }),
     freezeAlt: isImperial
       ? Math.round(h.freezingLevelHeight * 3.28084)
       : Math.round(h.freezingLevelHeight),

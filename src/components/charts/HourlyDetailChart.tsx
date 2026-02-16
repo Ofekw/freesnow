@@ -12,7 +12,7 @@ import {
 import type { HourlyMetrics } from '@/types';
 import { cmToIn } from '@/utils/weather';
 import { useUnits } from '@/context/UnitsContext';
-import { format, parseISO } from 'date-fns';
+import { useTimezone } from '@/context/TimezoneContext';
 
 interface Props {
   hourly: HourlyMetrics[];
@@ -20,10 +20,11 @@ interface Props {
 
 export function HourlyDetailChart({ hourly }: Props) {
   const { temp: tempUnit, snow: snowUnit } = useUnits();
+  const { fmtDate } = useTimezone();
   const isImperial = tempUnit === 'F';
 
   const data = hourly.map((h) => ({
-    time: format(parseISO(h.time), 'EEE ha'),
+    time: fmtDate(h.time, { weekday: 'short', hour: 'numeric' }),
     snow: isImperial ? +cmToIn(h.snowfall).toFixed(2) : +h.snowfall.toFixed(1),
     rain: isImperial ? +(h.rain / 25.4).toFixed(2) : +h.rain.toFixed(1),
     temp: isImperial ? Math.round(h.temperature * 9 / 5 + 32) : Math.round(h.temperature),

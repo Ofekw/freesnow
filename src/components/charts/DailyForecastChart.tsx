@@ -12,7 +12,7 @@ import {
 import type { DailyMetrics } from '@/types';
 import { cmToIn } from '@/utils/weather';
 import { useUnits } from '@/context/UnitsContext';
-import { format, parseISO } from 'date-fns';
+import { useTimezone } from '@/context/TimezoneContext';
 
 interface Props {
   daily: DailyMetrics[];
@@ -20,10 +20,11 @@ interface Props {
 
 export function DailyForecastChart({ daily }: Props) {
   const { temp: tempUnit, snow: snowUnit } = useUnits();
+  const { fmtDate } = useTimezone();
   const isImperial = tempUnit === 'F';
 
   const data = daily.map((d) => ({
-    date: format(parseISO(d.date), 'EEE M/d'),
+    date: fmtDate(d.date + 'T12:00:00', { weekday: 'short', month: 'numeric', day: 'numeric' }),
     snow: isImperial ? +cmToIn(d.snowfallSum).toFixed(1) : +d.snowfallSum.toFixed(1),
     rain: isImperial ? +(d.rainSum / 25.4).toFixed(2) : +d.rainSum.toFixed(1),
     high: isImperial ? Math.round(d.temperatureMax * 9 / 5 + 32) : Math.round(d.temperatureMax),

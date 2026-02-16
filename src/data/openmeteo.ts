@@ -135,6 +135,7 @@ export async function fetchForecast(
   band: ElevationBand,
   forecastDays: number = 7,
   pastDays: number = 0,
+  timezone: string = 'auto',
 ): Promise<BandForecast> {
   const params: Record<string, string | number | boolean> = {
     latitude: lat,
@@ -142,7 +143,7 @@ export async function fetchForecast(
     elevation,
     hourly: HOURLY_VARS,
     daily: DAILY_VARS,
-    timezone: 'auto',
+    timezone,
     forecast_days: forecastDays,
   };
   if (pastDays > 0) params.past_days = pastDays;
@@ -175,6 +176,7 @@ export async function fetchHistorical(
   elevation: number,
   startDate: string,
   endDate: string,
+  timezone: string = 'auto',
 ): Promise<HistoricalSnowDay[]> {
   const url = `${BASE}/archive?${qs({
     latitude: lat,
@@ -183,7 +185,7 @@ export async function fetchHistorical(
     start_date: startDate,
     end_date: endDate,
     daily: 'snowfall_sum,snow_depth_max,temperature_2m_max,temperature_2m_min',
-    timezone: 'auto',
+    timezone,
   })}`;
 
   const data = await fetchJSON<OMHistoricalResponse>(url);
