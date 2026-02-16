@@ -1,14 +1,22 @@
 import { useState, useMemo } from 'react';
-import { searchResorts, RESORTS } from '@/data/resorts';
+import { searchResorts, RESORTS, getResortBySlug } from '@/data/resorts';
 import { useFavorites } from '@/hooks/useFavorites';
 import { ResortCard } from '@/components/ResortCard';
 import './HomePage.css';
 
 export function HomePage() {
   const [query, setQuery] = useState('');
-  const { toggle, isFav } = useFavorites();
+  const { favorites, toggle, isFav } = useFavorites();
 
   const filtered = useMemo(() => searchResorts(query), [query]);
+
+  const favoriteResorts = useMemo(
+    () =>
+      favorites
+        .map((f) => getResortBySlug(f.slug))
+        .filter((r): r is NonNullable<typeof r> => r != null),
+    [favorites],
+  );
 
   // Group by region
   const grouped = useMemo(() => {
@@ -39,6 +47,23 @@ export function HomePage() {
           aria-label="Search resorts"
         />
       </section>
+
+      {/* Favourites section — only visible when at least one resort is favourited */}
+      {favoriteResorts.length > 0 && (
+        <section className="home__region home__favorites">
+          <h2 className="home__region-title">★ Favourites</h2>
+          <div className="home__grid">
+            {favoriteResorts.map((r) => (
+              <ResortCard
+                key={r.slug}
+                resort={r}
+                isFavorite={true}
+                onToggleFavorite={() => toggle(r.slug)}
+              />
+            ))}
+          </div>
+        </section>
+      )}
 
       {grouped.length === 0 && (
         <p className="home__empty">No resorts match "{query}"</p>

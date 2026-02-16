@@ -1,8 +1,7 @@
-import { Outlet, Link, useLocation } from 'react-router-dom';
+import { Outlet, Link } from 'react-router-dom';
 import './Layout.css';
 
 export function Layout() {
-  const { pathname } = useLocation();
 
   return (
     <div className="layout">
@@ -12,22 +11,7 @@ export function Layout() {
             <SnowflakeIcon />
             <span>FreeSnow</span>
           </Link>
-          <nav className="header__nav">
-            <Link
-              to="/"
-              className={pathname === '/' ? 'nav-link active' : 'nav-link'}
-            >
-              Resorts
-            </Link>
-            <Link
-              to="/favorites"
-              className={
-                pathname === '/favorites' ? 'nav-link active' : 'nav-link'
-              }
-            >
-              Favorites
-            </Link>
-          </nav>
+
         </div>
       </header>
 

@@ -38,6 +38,13 @@
   margin-top: var(--space-xl);
 }
 
+.home__favorites {
+  background: rgba(245, 158, 11, 0.06);
+  border: 1px solid rgba(245, 158, 11, 0.18);
+  border-radius: var(--radius-md);
+  padding: var(--space-md);
+}
+
 .home__region-title {
   font-size: 1.25rem;
   font-weight: 700;
