@@ -1,4 +1,4 @@
-# ❄️ FreeSnow
+# ❄️ [OpenSnow.App](https://OpenSnow.App)
 
 Free & open-source ski resort snow forecasts — an alternative to OpenSnow / Snow-Forecast.
 

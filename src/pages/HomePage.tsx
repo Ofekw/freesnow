@@ -34,7 +34,7 @@ export function HomePage() {
     <div className="home">
       <section className="home__hero">
         <h1 className="home__title">
-          <span className="home__title-icon">❄️</span> FreeSnow
+          <span className="home__title-icon">❄️</span>
         </h1>
         <p className="home__subtitle">
           Free &amp; open-source ski resort forecasts for North America

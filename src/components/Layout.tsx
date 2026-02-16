@@ -122,8 +122,24 @@ export function Layout() {
             >
               Open-Meteo
             </a>{' '}
-            (CC BY 4.0). FreeSnow is open-source &amp; non-commercial.
+            (CC BY 4.0). FreeSnow is{' '}
+            <a
+              href="https://github.com/Ofekw/freesnow"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              open-source
+            </a>{' '}
+            &amp; non-commercial.
           </p>
+          <a
+            className="footer__feedback"
+            href="https://github.com/Ofekw/freesnow/issues"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Submit Feedback
+          </a>
         </div>
       </footer>
     </div>

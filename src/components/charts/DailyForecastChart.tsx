@@ -40,13 +40,12 @@ export function DailyForecastChart({ daily }: Props) {
   return (
     <div style={{ width: '100%', height: 320 }}>
       <ResponsiveContainer>
-        <ComposedChart data={data} barCategoryGap="15%" barGap="-100%" margin={{ top: 8, right: 12, left: 0, bottom: 0 }}>
+        <ComposedChart data={data} barCategoryGap="15%" margin={{ top: 8, right: 12, left: 0, bottom: 0 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
           <XAxis
             dataKey="date"
             tick={{ fill: '#94a3b8', fontSize: 12 }}
             axisLine={{ stroke: '#475569' }}
-            padding={{ left: -48, right: -48 }}
           />
           <YAxis
             yAxisId="precip"
@@ -72,8 +71,8 @@ export function DailyForecastChart({ daily }: Props) {
             }}
           />
           <Legend wrapperStyle={{ fontSize: 12, color: '#94a3b8' }} />
-          <Bar yAxisId="precip" dataKey="snow" name={`Snow (${precipLabel})`} fill="#38bdf8" radius={[4, 4, 0, 0]} maxBarSize={30} />
-          <Bar yAxisId="precip" dataKey="rain" name={`Rain (${precipLabel})`} fill="#6366f1" radius={[4, 4, 0, 0]} maxBarSize={30} fillOpacity={0.7} />
+          <Bar yAxisId="precip" stackId="precip" dataKey="snow" name={`Snow (${precipLabel})`} fill="#38bdf8" radius={[4, 4, 0, 0]} maxBarSize={30} />
+          <Bar yAxisId="precip" stackId="precip" dataKey="rain" name={`Rain (${precipLabel})`} fill="#6366f1" radius={[4, 4, 0, 0]} maxBarSize={30} />
           <Line yAxisId="temp" type="monotone" dataKey="high" name={`High ${tempLabel}`} stroke="#f59e0b" strokeWidth={2} dot={false} />
           <Line yAxisId="temp" type="monotone" dataKey="low" name={`Low ${tempLabel}`} stroke="#3b82f6" strokeWidth={2} dot={false} />
           <Line yAxisId="temp" type="monotone" dataKey="feelsHigh" name="Feels High" stroke="#f59e0b" strokeWidth={1} strokeDasharray="4 3" dot={false} />
