@@ -64,6 +64,10 @@ jobs:
           script: |
             const fs = require('fs');
             
+            // Check if screenshots directory exists
+            const screenshotDir = 'screenshots';
+            const dirExists = fs.existsSync(screenshotDir);
+            
             // Create comment body
             let body = `## 📸 PR Screenshots\n\n`;
             body += `Screenshots generated for this PR to help with visual regression testing.\n\n`;
@@ -74,6 +78,10 @@ jobs:
             body += `📦 [Download all screenshots from workflow artifacts](${runUrl})\n\n`;
             
             body += `---\n\n`;
+            
+            if (!dirExists) {
+              body += `⚠️ **Warning:** Screenshots directory not found. Screenshot generation may have failed.\n\n`;
+            }
             
             // List screenshots
             body += `### Generated Screenshots\n\n`;
@@ -88,7 +96,7 @@ jobs:
             ];
             
             for (const shot of screenshots) {
-              const exists = fs.existsSync(`screenshots/${shot.file}`);
+              const exists = dirExists && fs.existsSync(`${screenshotDir}/${shot.file}`);
               const status = exists ? '✅' : '❌';
               body += `| ${shot.page} | ${shot.viewport} | ${status} \`${shot.file}\` |\n`;
             }
