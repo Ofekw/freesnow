@@ -57,12 +57,13 @@ async function takeScreenshots() {
       
       const context = await browser.newContext({
         viewport: VIEWPORTS[viewport],
+        serviceWorkers: 'block',
       });
       
       const page = await context.newPage();
       
       // Intercept Open-Meteo API calls and return mock data
-      await page.route('**/api.open-meteo.com/**', async (route) => {
+      await page.route('**/*open-meteo.com/**', async (route) => {
         const url = route.request().url();
         console.log(`  🔀 Intercepted API call: ${url.substring(0, MAX_LOG_URL_LENGTH)}...`);
         
