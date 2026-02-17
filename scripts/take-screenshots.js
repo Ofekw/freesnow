@@ -15,6 +15,7 @@ const __dirname = dirname(__filename);
 const SCREENSHOT_DIR = resolve(__dirname, '../screenshots');
 const MOCKS_DIR = resolve(__dirname, 'mocks');
 const BASE_URL = process.env.BASE_URL || 'http://localhost:4173';
+const MAX_LOG_URL_LENGTH = 80;
 
 // Viewport configurations
 const VIEWPORTS = {
@@ -63,7 +64,7 @@ async function takeScreenshots() {
       // Intercept Open-Meteo API calls and return mock data
       await page.route('**/api.open-meteo.com/**', async (route) => {
         const url = route.request().url();
-        console.log(`  🔀 Intercepted API call: ${url.substring(0, 80)}...`);
+        console.log(`  🔀 Intercepted API call: ${url.substring(0, MAX_LOG_URL_LENGTH)}...`);
         
         await route.fulfill({
           status: 200,
