@@ -42,12 +42,14 @@ describe('Layout', () => {
     expect(screen.getByLabelText(/change timezone/i)).toBeInTheDocument();
   });
 
-  it('hides the snow alerts FAB when notifications are not supported', () => {
+  it('disables the snow alerts FAB when notifications are not supported', () => {
     renderWithProviders(<Layout />);
-    expect(screen.queryByLabelText(/enable snow alerts/i)).not.toBeInTheDocument();
+    const btn = screen.getByLabelText(/enable snow alerts/i);
+    expect(btn).toBeInTheDocument();
+    expect(btn).toBeDisabled();
   });
 
-  it('renders the snow alerts FAB when notifications are supported', () => {
+  it('renders the snow alerts FAB enabled when notifications are supported', () => {
     Object.defineProperty(globalThis, 'Notification', {
       value: { permission: 'default', requestPermission: async () => 'default' },
       configurable: true,
@@ -58,7 +60,9 @@ describe('Layout', () => {
       configurable: true,
     });
     renderWithProviders(<Layout />);
-    expect(screen.getByLabelText(/enable snow alerts/i)).toBeInTheDocument();
+    const btn = screen.getByLabelText(/enable snow alerts/i);
+    expect(btn).toBeInTheDocument();
+    expect(btn).not.toBeDisabled();
   });
 
   it('renders footer with Open-Meteo attribution', () => {
