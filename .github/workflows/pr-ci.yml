@@ -1,0 +1,35 @@
+name: PR CI
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches:
+      - main
+
+jobs:
+  build_and_test:
+    runs-on: ubuntu-latest
+    name: Build and Test
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Build app
+        run: bun run build
+
+      - name: Run tests
+        run: |
+          set -o pipefail
+          if bun run test 2>&1 | tee /tmp/bun-test.log; then
+            exit 0
+          fi
+          if grep -q "No test files found" /tmp/bun-test.log; then
+            echo "No test files found; treating build-only validation as pass."
+            exit 0
+          fi
+          exit 1
