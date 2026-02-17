@@ -2,11 +2,13 @@ import { useState, useRef, useEffect, useMemo } from 'react';
 import { Outlet } from 'react-router-dom';
 import { useUnits } from '@/context/UnitsContext';
 import { useTimezone, TZ_OPTIONS, getUtcOffset } from '@/context/TimezoneContext';
+import { useSnowAlerts } from '@/hooks/useSnowAlerts';
 import './Layout.css';
 
 export function Layout() {
   const { units, toggle, temp, elev } = useUnits();
   const { tzRaw, tzLabel, setTz } = useTimezone();
+  const { statusIcon, statusTitle, toggleAlerts, isSupported, enabled, permission } = useSnowAlerts();
   const [tzOpen, setTzOpen] = useState(false);
   const [tzSearch, setTzSearch] = useState('');
   const tzRef = useRef<HTMLDivElement>(null);
@@ -63,6 +65,16 @@ export function Layout() {
           title={`Switch to ${units === 'imperial' ? 'metric' : 'imperial'} units`}
         >
           °{temp} / {elev}
+        </button>
+
+        <button
+          className={`fab fab--alert${permission === 'denied' ? ' fab--alert-blocked' : enabled ? ' fab--alert-on' : ''}`}
+          onClick={toggleAlerts}
+          aria-label={enabled ? 'Disable snow alerts' : 'Enable snow alerts'}
+          title={statusTitle}
+          disabled={!isSupported}
+        >
+          {statusIcon}
         </button>
 
         <div className="tz-picker" ref={tzRef}>

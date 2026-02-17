@@ -17,6 +17,11 @@ describe('Layout', () => {
     expect(screen.getByLabelText(/change timezone/i)).toBeInTheDocument();
   });
 
+  it('renders the snow alerts FAB with enable label when alerts are off', () => {
+    renderWithProviders(<Layout />);
+    expect(screen.getByLabelText(/enable snow alerts/i)).toBeInTheDocument();
+  });
+
   it('renders footer with Open-Meteo attribution', () => {
     renderWithProviders(<Layout />);
     expect(screen.getByText(/open-meteo/i)).toBeInTheDocument();

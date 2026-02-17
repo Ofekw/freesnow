@@ -50,15 +50,6 @@ export function ResortPage() {
   // Reset selected day when forecast changes
   useEffect(() => { setSelectedDayIdx(0); }, [forecast, band]);
 
-  if (!resort) {
-    return (
-      <div className="resort-page__empty">
-        <h2>Resort not found</h2>
-        <Link to="/">← Back to all resorts</Link>
-      </div>
-    );
-  }
-
   const bandData: BandForecast | undefined = forecast?.[band];
 
   // Compute hourly data for selected day
@@ -67,6 +58,15 @@ export function ResortPage() {
     if (!bandData || !selectedDay) return [];
     return bandData.hourly.filter((h) => h.time.startsWith(selectedDay.date));
   }, [bandData, selectedDay]);
+
+  if (!resort) {
+    return (
+      <div className="resort-page__empty">
+        <h2>Resort not found</h2>
+        <Link to="/">← Back to all resorts</Link>
+      </div>
+    );
+  }
 
   const selectedDayLabel = selectedDay
     ? fmtDate(selectedDay.date + 'T12:00:00', { weekday: 'long', month: 'short', day: 'numeric' })

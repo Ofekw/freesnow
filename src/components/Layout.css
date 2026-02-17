@@ -37,6 +37,30 @@
 .fab:active {
   transform: scale(0.95);
 }
+.fab:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* ── Alert Toggle ─────────────────────────────── */
+.fab--alert {
+  font-size: 1.1rem;
+  padding: 6px 10px;
+  line-height: 1;
+}
+.fab--alert-on {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: #fff;
+}
+.fab--alert-on:hover {
+  background: var(--color-accent-hover, var(--color-accent));
+  border-color: var(--color-accent-hover, var(--color-accent));
+}
+.fab--alert-blocked {
+  opacity: 0.45;
+  text-decoration: line-through;
+}
 
 /* ── Timezone Picker ──────────────────────────── */
 .tz-picker {
