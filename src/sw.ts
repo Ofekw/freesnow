@@ -74,9 +74,10 @@ async function runSnowAlertCheck() {
 
       const inches = cmToIn(nextSnowDay.snowfallSum).toFixed(1);
       const dayLabel = formatDateLabel(nextSnowDay.date, settings.timezone);
+      const thresholdInches = cmToIn(settings.thresholdCm).toFixed(1);
 
       await self.registration.showNotification(`❄️ ${resort.name}: ${inches}" forecast`, {
-        body: `${dayLabel} at ${resort.name} is forecasting ${inches}" of snow (≥ 3").`,
+        body: `${dayLabel} at ${resort.name} is forecasting ${inches}" of snow (≥ ${thresholdInches}").`,
         icon: '/pwa-192x192.png',
         badge: '/pwa-192x192.png',
         data: { url: `/resort/${slug}` },
