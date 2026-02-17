@@ -37,6 +37,10 @@
 .fab:active {
   transform: scale(0.95);
 }
+.fab:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
 
 /* ── Timezone Picker ──────────────────────────── */
 .tz-picker {

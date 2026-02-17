@@ -250,6 +250,35 @@ src/
 └── styles/
 ```
 
+---
+
+## Phase 11: Frontend-Only Snow Alerts (Android PWA MVP)
+
+### What changed
+- Added a frontend-only snow alert flow using Notification API + service worker periodic background sync (best-effort, no backend).
+- Added a new alerts FAB in the top-right controls so users can enable notifications and see alert status.
+- Added shared IndexedDB-backed alert settings storage for service worker + app coordination (`favoriteSlugs`, timezone, threshold, enabled flag).
+- Implemented service-worker periodic checks for favorited resorts and notification dispatch when forecast daily snowfall crosses the 3-inch threshold (7.62 cm).
+
+### Why it changed
+- Enables alerting for a backend-less MVP while preserving FreeSnow's core architecture (client-only data + local state).
+- Provides practical Android-installed PWA support for background checks, with explicit best-effort behavior due browser/OS scheduling constraints.
+
+### Key files affected
+- `vite.config.ts` (moved PWA to `injectManifest` strategy)
+- `src/sw.ts` (custom service worker: caching + periodic sync handler + notification click routing)
+- `src/alerts/storage.ts`
+- `src/alerts/snowAlerts.ts`
+- `src/hooks/useSnowAlerts.ts`
+- `src/components/Layout.tsx`
+- `src/components/Layout.css`
+- `src/main.tsx`
+- `src/components/__tests__/Layout.test.tsx`
+
+### Follow-up notes
+- Periodic background sync cadence is controlled by Android/Chromium and is not guaranteed to run exactly morning/evening.
+- Alert dedupe is per resort + forecast date to reduce repeated notifications for the same snow day.
+
 ## Known Technical Notes
 
 - **Bun PATH**: Must add `$env:PATH = "$env:USERPROFILE\.bun\bin;$env:PATH"` each PowerShell session
