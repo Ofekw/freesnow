@@ -116,6 +116,7 @@ export function RecentSnowChart({ days }: Props) {
               fill="#38bdf8"
               radius={[3, 3, 0, 0]}
               maxBarSize={20}
+              isAnimationActive={false}
             />
             <Line
               yAxisId="snow"
@@ -126,6 +127,7 @@ export function RecentSnowChart({ days }: Props) {
               strokeWidth={2}
               dot={false}
               strokeDasharray="5 3"
+              isAnimationActive={false}
             />
             <Line
               yAxisId="temp"
@@ -136,6 +138,7 @@ export function RecentSnowChart({ days }: Props) {
               strokeWidth={1.5}
               dot={false}
               opacity={0.5}
+              isAnimationActive={false}
             />
             <Line
               yAxisId="temp"
@@ -146,6 +149,7 @@ export function RecentSnowChart({ days }: Props) {
               strokeWidth={1.5}
               dot={false}
               opacity={0.5}
+              isAnimationActive={false}
             />
           </ComposedChart>
         </ResponsiveContainer>

@@ -93,6 +93,7 @@ export function HourlySnowChart({ hourly, dayLabel }: Props) {
               fill="#38bdf8"
               radius={[3, 3, 0, 0]}
               maxBarSize={24}
+              isAnimationActive={false}
             />
           </BarChart>
         </ResponsiveContainer>
