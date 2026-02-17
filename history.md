@@ -211,6 +211,31 @@ A chronological log of all implementation work, decisions, and changes made duri
 
 ---
 
+---
+
+## Phase 11: PR Screenshot Generation
+
+### Visual Regression Testing for PRs
+- Added Playwright as a dev dependency for automated screenshot generation
+- Created `scripts/take-screenshots.js` — Node.js script that:
+  - Launches headless Chromium via Playwright
+  - Takes desktop (1920x1080) and mobile (375x667) screenshots
+  - Captures home page and Crystal Mountain resort detail page
+  - Saves screenshots to `screenshots/` directory (gitignored)
+- Updated PR CI workflow (`.github/workflows/pr-ci.yml`) to:
+  - Install Playwright browsers after build
+  - Start Vite preview server on port 4173
+  - Run screenshot generation script
+  - Upload screenshots as workflow artifacts (30-day retention)
+- Added `npm run screenshots` script to `package.json`
+- Screenshots help PR reviewers visually test for regressions on key pages
+
+### Pages Captured
+- Home page (main resort list with search and favorites)
+- Crystal Mountain resort page (representative detail page with charts, forecasts, and interactive elements)
+
+---
+
 ## Current File Inventory
 
 ```
@@ -282,6 +307,7 @@ src/
 | Timezone picker (13 NA zones + UTC) | ✅ Complete |
 | GitHub repo link + feedback button | ✅ Complete |
 | Comprehensive UI unit tests | ✅ Complete |
+| PR screenshot generation | ✅ Complete |
 | Map-based resort browser | 🔲 Not started |
 | Global resort coverage | 🔲 Not started |
 | Snow report / current conditions | 🔲 Not started |
