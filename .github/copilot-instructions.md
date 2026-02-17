@@ -17,3 +17,12 @@
 ## Scope discipline
 - Do not add unrelated history notes for minor edits.
 - Do not remove existing history content unless explicitly asked.
+
+## Validation workflow
+- Use Bun tooling only for install and script execution.
+- Never use `node`, `npm`, or `npx` commands in this repository.
+- Validate changes with the existing project scripts:
+  - `bun run lint`
+  - `bun run build`
+  - `bun run test`
+- If `bun run test` reports no test files, treat lint/build as the required baseline checks for the task.
