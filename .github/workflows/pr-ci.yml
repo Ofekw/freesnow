@@ -8,6 +8,7 @@ on:
 
 permissions:
   contents: read
+  pull-requests: write
 
 jobs:
   build_and_test:
@@ -27,3 +28,116 @@ jobs:
 
       - name: Run tests
         run: bun run test -- --passWithNoTests
+
+      - name: Install Playwright browsers
+        run: bunx playwright install --with-deps chromium
+
+      - name: Start preview server
+        run: bun run preview &
+        env:
+          CI: true
+
+      - name: Wait for server to be ready
+        run: |
+          echo "Waiting for server to start..."
+          timeout 30 bash -c 'until curl -s http://localhost:4173 > /dev/null; do sleep 1; done'
+          echo "Server is ready!"
+
+      - name: Generate screenshots
+        run: bun run screenshots
+        env:
+          BASE_URL: http://localhost:4173
+
+      - name: Upload screenshots
+        uses: actions/upload-artifact@v4
+        if: always()
+        id: upload-screenshots
+        with:
+          name: pr-screenshots
+          path: screenshots/
+          retention-days: 30
+
+      - name: Post screenshots to PR
+        if: always() && github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            
+            // Check if screenshots directory exists
+            const screenshotDir = 'screenshots';
+            const dirExists = fs.existsSync(screenshotDir);
+            
+            // Create comment body
+            let body = `## 📸 PR Screenshots\n\n`;
+            body += `Screenshots generated for this PR to help with visual regression testing.\n\n`;
+            body += `> **Note:** Screenshots use mocked API data for consistent, deterministic results.\n\n`;
+            
+            // Add download link
+            const runUrl = `${context.payload.repository.html_url}/actions/runs/${context.runId}`;
+            body += `📦 [Download all screenshots from workflow artifacts](${runUrl})\n\n`;
+            
+            body += `---\n\n`;
+            
+            if (!dirExists) {
+              body += `⚠️ **Warning:** Screenshots directory not found. Screenshot generation may have failed.\n\n`;
+            }
+            
+            // List screenshots
+            body += `### Generated Screenshots\n\n`;
+            body += `| Page | Viewport | Filename |\n`;
+            body += `|------|----------|----------|\n`;
+            
+            const screenshots = [
+              { page: 'Home Page', viewport: 'Desktop (1920x1080)', file: 'home-desktop.png' },
+              { page: 'Home Page', viewport: 'Mobile (375x667)', file: 'home-mobile.png' },
+              { page: 'Crystal Mountain', viewport: 'Desktop (1920x1080)', file: 'crystal-mountain-desktop.png' },
+              { page: 'Crystal Mountain', viewport: 'Mobile (375x667)', file: 'crystal-mountain-mobile.png' },
+            ];
+            
+            for (const shot of screenshots) {
+              const exists = dirExists && fs.existsSync(`${screenshotDir}/${shot.file}`);
+              const status = exists ? '✅' : '❌';
+              body += `| ${shot.page} | ${shot.viewport} | ${status} \`${shot.file}\` |\n`;
+            }
+            
+            body += `\n`;
+            body += `<details>\n`;
+            body += `<summary>ℹ️ How to view screenshots</summary>\n\n`;
+            body += `1. Click the "📦 Download all screenshots" link above\n`;
+            body += `2. Scroll down to the "Artifacts" section\n`;
+            body += `3. Click on "pr-screenshots" to download\n`;
+            body += `4. Extract the ZIP file to view all screenshots\n`;
+            body += `</details>\n`;
+            
+            // Find existing comment
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            
+            const botComment = comments.find(comment => 
+              comment.user.type === 'Bot' && 
+              comment.body.includes('📸 PR Screenshots')
+            );
+            
+            // Update or create comment
+            if (botComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: body
+              });
+              console.log(`Updated comment ${botComment.id}`);
+            } else {
+              const { data: comment } = await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: body
+              });
+              console.log(`Created comment ${comment.id}`);
+            }
+
