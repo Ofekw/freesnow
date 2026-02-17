@@ -170,6 +170,15 @@ A chronological log of all implementation work, decisions, and changes made duri
 
 ---
 
+## Phase 9: Copilot Workflow Guardrails
+
+- Added `.github/copilot-instructions.md` to enforce required context loading on every task.
+- Instructions now require reading both `#file:history.md` and `#file:plan.md` before decisions or code changes.
+- Added a logging rule: when a task introduces a big change, update `#file:history.md` in the same task.
+- Goal: keep project context usage consistent and preserve a reliable chronological implementation record.
+
+---
+
 ## Current File Inventory
 
 ```
