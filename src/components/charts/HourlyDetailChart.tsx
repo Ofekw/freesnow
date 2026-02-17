@@ -50,6 +50,8 @@ export function HourlyDetailChart({ hourly }: Props) {
           <YAxis
             yAxisId="precip"
             orientation="left"
+            domain={[0, isImperial ? 1 : 2.5]}
+            ticks={isImperial ? [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0] : [0, 0.5, 1.0, 1.5, 2.0, 2.5]}
             tick={{ fill: '#94a3b8', fontSize: 11 }}
             axisLine={{ stroke: '#475569' }}
           />

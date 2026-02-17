@@ -179,7 +179,23 @@ A chronological log of all implementation work, decisions, and changes made duri
 
 ---
 
-## Phase 10: Comprehensive UI Unit Tests
+## Phase 10: Fixed Scale Snow Total Graphs
+
+### Consistent Y-Axis Scales for Snow Charts
+- **DailyForecastChart**: Fixed precip Y-axis to 0–12 inches with 1-inch increments (imperial) / 0–30 cm with 5 cm increments (metric)
+- **HourlyDetailChart**: Fixed precip Y-axis to 0–1 inch with 0.1-inch increments (imperial) / 0–2.5 cm with 0.5 cm increments (metric)
+- **HourlySnowChart**: Fixed Y-axis to 0–1 inch with 0.1-inch increments (imperial) / 0–2.5 cm with 0.5 cm increments (metric)
+- Previously all three charts used auto-scaling Y-axes, which made comparing snowfall amounts across different days or resorts difficult
+- Now all snow total graphs use fixed, consistent scales so users can visually compare snowfall at a glance
+
+### Files Changed
+- `src/components/charts/DailyForecastChart.tsx` — added `domain` and `ticks` to precip YAxis
+- `src/components/charts/HourlyDetailChart.tsx` — added `domain` and `ticks` to precip YAxis
+- `src/components/charts/HourlySnowChart.tsx` — added `domain` and `ticks` to YAxis
+
+---
+
+## Phase 11: Comprehensive UI Unit Tests
 
 ### Test Infrastructure
 - Switched test runner from vitest to **bun test** (bun's native test runner) — vitest v3 has Windows/bun compatibility issues with worker pools
@@ -213,7 +229,7 @@ A chronological log of all implementation work, decisions, and changes made duri
 
 ---
 
-## Phase 11: PR Screenshot Generation
+## Phase 12: PR Screenshot Generation
 
 ### Visual Regression Testing for PRs
 - Added Playwright as a dev dependency for automated screenshot generation

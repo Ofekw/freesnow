@@ -51,6 +51,8 @@ export function DailyForecastChart({ daily }: Props) {
           <YAxis
             yAxisId="precip"
             orientation="left"
+            domain={[0, isImperial ? 12 : 30]}
+            ticks={isImperial ? [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] : [0, 5, 10, 15, 20, 25, 30]}
             tick={{ fill: '#94a3b8', fontSize: 12 }}
             axisLine={{ stroke: '#475569' }}
             label={{ value: precipLabel, angle: -90, position: 'insideLeft', fill: '#94a3b8', fontSize: 11 }}
