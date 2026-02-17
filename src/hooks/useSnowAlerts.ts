@@ -77,7 +77,11 @@ export function useSnowAlerts() {
   }, []);
 
   const toggleAlerts = useCallback(async () => {
-    if (permission === 'unsupported' || permission === 'denied') return;
+    if (permission === 'unsupported') return;
+    if (permission === 'denied') {
+      alert('Notifications are blocked. Please enable them in your browser or device settings, then try again.');
+      return;
+    }
     if (permission !== 'granted') {
       await requestAlerts();
       return;

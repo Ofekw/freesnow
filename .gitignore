@@ -6,3 +6,4 @@ dist/
 screenshots/
 *.tsbuildinfo
 package-lock.json
+bun.lockb

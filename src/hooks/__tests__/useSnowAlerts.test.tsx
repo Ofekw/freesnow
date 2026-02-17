@@ -231,4 +231,25 @@ describe('useSnowAlerts', () => {
     expect(result.current.enabled).toBe(true);
     expect(result.current.statusIcon).toBe('🔔');
   });
+
+  it('toggleAlerts shows alert message when permission is denied', async () => {
+    setNotification('denied');
+
+    const alertCalls: string[] = [];
+    const origAlert = globalThis.alert;
+    globalThis.alert = (msg: string) => { alertCalls.push(msg); };
+
+    try {
+      const { result } = renderHook(() => useSnowAlerts(), { wrapper });
+
+      await act(async () => {
+        await result.current.toggleAlerts();
+      });
+
+      expect(alertCalls.length).toBe(1);
+      expect(alertCalls[0]).toMatch(/browser or device settings/i);
+    } finally {
+      globalThis.alert = origAlert;
+    }
+  });
 });
