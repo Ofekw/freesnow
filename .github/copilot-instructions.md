@@ -17,3 +17,10 @@
 ## Scope discipline
 - Do not add unrelated history notes for minor edits.
 - Do not remove existing history content unless explicitly asked.
+
+## Validation workflow
+- Validate changes with the existing project scripts:
+  - `npm run lint`
+  - `npm run build`
+  - `npm run test`
+- If `npm run test` reports no test files, treat lint/build as the required baseline checks for the task.
