@@ -11,7 +11,7 @@
     "lint": "eslint src --ext .ts,.tsx",
     "test": "bun test",
     "test:watch": "bun test --watch",
-    "screenshots": "node scripts/take-screenshots.js"
+    "screenshots": "bun scripts/take-screenshots.js"
   },
   "dependencies": {
     "date-fns": "^4.1.0",

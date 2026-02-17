@@ -29,7 +29,7 @@ jobs:
         run: bun run test -- --passWithNoTests
 
       - name: Install Playwright browsers
-        run: npx playwright install --with-deps chromium
+        run: bunx playwright install --with-deps chromium
 
       - name: Start preview server
         run: bun run preview &
@@ -43,7 +43,7 @@ jobs:
           echo "Server is ready!"
 
       - name: Generate screenshots
-        run: npm run screenshots
+        run: bun run screenshots
         env:
           BASE_URL: http://localhost:4173
 
