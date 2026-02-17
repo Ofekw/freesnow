@@ -42,15 +42,14 @@ export function FavoriteCard({ resort, onToggleFavorite }: Props) {
         const dailyDays = forecastData?.daily ?? [];
         const today = new Date().toISOString().slice(0, 10);
 
-        // Split into past and future days
+        // Split into past and future days (ISO date strings can be compared lexicographically)
         const pastDays = dailyDays.filter((d) => d.date < today);
         const futureDays = dailyDays.filter((d) => d.date >= today);
 
-        // Calculate last 14 days snowfall from past days
-        const last14Snow = pastDays.reduce(
-          (sum: number, d: DailyMetrics) => sum + d.snowfallSum,
-          0,
-        );
+        // Calculate last 14 days snowfall (take only the most recent 14 days)
+        const last14Snow = pastDays
+          .slice(-14)
+          .reduce((sum: number, d: DailyMetrics) => sum + d.snowfallSum, 0);
 
         // Calculate next 7 and 14 days from future days
         const next7Snow = futureDays
@@ -60,8 +59,11 @@ export function FavoriteCard({ resort, onToggleFavorite }: Props) {
           .slice(0, 14)
           .reduce((sum: number, d: DailyMetrics) => sum + d.snowfallSum, 0);
 
-        // Tomorrow is at index 1 (today is index 0 in futureDays)
-        const tomorrow = futureDays[1] ?? null;
+        // Tomorrow: find the first day after today
+        const tomorrowDate = new Date();
+        tomorrowDate.setDate(tomorrowDate.getDate() + 1);
+        const tomorrowStr = tomorrowDate.toISOString().slice(0, 10);
+        const tomorrow = futureDays.find((d) => d.date === tomorrowStr) ?? null;
 
         setSummary({ last14Snow, next7Snow, next14Snow, tomorrow });
       } catch {
