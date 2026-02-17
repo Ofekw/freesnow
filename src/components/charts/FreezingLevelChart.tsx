@@ -67,6 +67,7 @@ export function FreezingLevelChart({ hourly }: Props) {
             fill="#38bdf8"
             fillOpacity={0.15}
             strokeWidth={2}
+            isAnimationActive={false}
           />
         </AreaChart>
       </ResponsiveContainer>

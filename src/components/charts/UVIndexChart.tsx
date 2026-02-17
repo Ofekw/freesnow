@@ -45,7 +45,7 @@ export function UVIndexChart({ daily }: Props) {
             }}
             formatter={(v: number) => [v.toFixed(1), 'UV Index']}
           />
-          <Bar dataKey="uv" name="UV Index" radius={[4, 4, 0, 0]}>
+          <Bar dataKey="uv" name="UV Index" radius={[4, 4, 0, 0]} isAnimationActive={false}>
             {data.map((entry, index) => (
               <Cell key={index} fill={uvColor(entry.uv)} />
             ))}
