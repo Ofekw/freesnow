@@ -108,17 +108,30 @@ export function DailyForecastChart({ daily }: Props) {
               color: '#f1f5f9',
               fontSize: 13,
             }}
-            formatter={(value: number, name: string) => {
+            // `formatter` receives the value for the series being hovered plus a
+            // payload object containing the full data item.  The chart stores both
+            // `rain` (raw total) and `rainDots` (0‑3 rating) on each point.  When
+            // the user hovers over the artificially‑drawn rain‑dots series we
+            // still want to show the total amount of rain, not the number of
+            // dots, so inspect the series name and fall back to the payload.
+            formatter={(value: number, name: string, props: any) => {
               if (name.includes('Rain')) {
-                const dotCount = typeof value === 'number' ? Math.round(value) : 0;
-                return [`${dotCount} dot${dotCount !== 1 ? 's' : ''}`, name];
+                if (name.includes('dots')) {
+                  const rainVal = props?.payload?.rain;
+                  if (typeof rainVal === 'number') {
+                    return [`${rainVal} ${precipLabel}`, 'Rain'];
+                  }
+                  // strconv fallback to dots if something unexpected happens
+                  const dotCount = typeof value === 'number' ? Math.round(value) : 0;
+                  return [`${dotCount} dot${dotCount !== 1 ? 's' : ''}`, name];
+                }
               }
               return [value, name];
             }}
           />
           <Legend wrapperStyle={{ fontSize: 12, color: '#94a3b8' }} />
           <Bar yAxisId="precip" dataKey="snow" name={`Snow (${precipLabel})`} fill="#38bdf8" radius={[4, 4, 0, 0]} maxBarSize={30} />
-          <Bar yAxisId="precip" dataKey="rainDots" name="Rain (dots: 0-3)" fill="transparent" maxBarSize={30} shape={RainDots} />
+          <Bar yAxisId="precip" dataKey="rainDots" name="Rain (0-3 rating)" fill="#6366f1" maxBarSize={30} shape={RainDots} />
           <Line yAxisId="temp" type="monotone" dataKey="high" name={`High ${tempLabel}`} stroke="#f59e0b" strokeWidth={2} dot={false} />
           <Line yAxisId="temp" type="monotone" dataKey="low" name={`Low ${tempLabel}`} stroke="#3b82f6" strokeWidth={2} dot={false} />
           <Line yAxisId="temp" type="monotone" dataKey="feelsHigh" name="Feels High" stroke="#f59e0b" strokeWidth={1} strokeDasharray="4 3" dot={false} />

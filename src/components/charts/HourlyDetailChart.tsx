@@ -106,17 +106,23 @@ export function HourlyDetailChart({ hourly }: Props) {
               color: '#f1f5f9',
               fontSize: 13,
             }}
-            formatter={(value: number, name: string) => {
+            formatter={(value: number, name: string, props: any) => {
               if (name.includes('Rain')) {
-                const dotCount = typeof value === 'number' ? Math.round(value) : 0;
-                return [`${dotCount} dot${dotCount !== 1 ? 's' : ''}`, name];
+                if (name.includes('dots')) {
+                  const rainVal = props?.payload?.rain;
+                  if (typeof rainVal === 'number') {
+                    return [`${rainVal} ${precipLabel}`, 'Rain'];
+                  }
+                  const dotCount = typeof value === 'number' ? Math.round(value) : 0;
+                  return [`${dotCount} dot${dotCount !== 1 ? 's' : ''}`, name];
+                }
               }
               return [value, name];
             }}
           />
           <Legend wrapperStyle={{ fontSize: 12 }} />
           <Bar yAxisId="precip" dataKey="snow" name={`Snow (${precipLabel})`} fill="#38bdf8" radius={[3, 3, 0, 0]} />
-          <Bar yAxisId="precip" dataKey="rainDots" name="Rain (dots: 0-3)" fill="transparent" shape={RainDots} />
+          <Bar yAxisId="precip" dataKey="rainDots" name="Rain (0-3 rating)" fill="#6366f1" shape={RainDots} />
           <Line yAxisId="temp" type="monotone" dataKey="temp" name={`Temp ${tempLabel}`} stroke="#f59e0b" strokeWidth={2} dot={false} />
           <Line yAxisId="temp" type="monotone" dataKey="feels" name={`Feels ${tempLabel}`} stroke="#f59e0b" strokeWidth={1} strokeDasharray="4 3" dot={false} />
         </ComposedChart>
