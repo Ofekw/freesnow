@@ -10,6 +10,7 @@ import type {
   ElevationBand,
   HistoricalSnowDay,
 } from '@/types';
+import { recalcHourly, recalcDailyFromHourly } from '@/utils/snowRecalc';
 
 const BASE = 'https://api.open-meteo.com/v1';
 
@@ -92,40 +93,64 @@ interface OMForecastResponse {
   };
 }
 
-function mapHourly(raw: OMForecastResponse['hourly']): HourlyMetrics[] {
-  return raw.time.map((t, i) => ({
-    time: t,
-    temperature: raw.temperature_2m[i]!,
-    apparentTemperature: raw.apparent_temperature[i]!,
-    relativeHumidity: raw.relative_humidity_2m[i]!,
-    precipitation: raw.precipitation[i]!,
-    rain: raw.rain[i]!,
-    snowfall: raw.snowfall[i]!,
-    precipitationProbability: raw.precipitation_probability[i]!,
-    weatherCode: raw.weather_code[i]!,
-    windSpeed: raw.wind_speed_10m[i]!,
-    windDirection: raw.wind_direction_10m[i]!,
-    windGusts: raw.wind_gusts_10m[i]!,
-    freezingLevelHeight: raw.freezing_level_height[i]!,
-  }));
+function mapHourly(raw: OMForecastResponse['hourly'], elevation: number): HourlyMetrics[] {
+  return raw.time.map((t, i) => {
+    const { snowfall, rain } = recalcHourly(
+      {
+        precipitation: raw.precipitation[i]!,
+        rain: raw.rain[i]!,
+        snowfall: raw.snowfall[i]!,
+        temperature: raw.temperature_2m[i]!,
+        freezingLevelHeight: raw.freezing_level_height[i]!,
+      },
+      elevation,
+    );
+    return {
+      time: t,
+      temperature: raw.temperature_2m[i]!,
+      apparentTemperature: raw.apparent_temperature[i]!,
+      relativeHumidity: raw.relative_humidity_2m[i]!,
+      precipitation: raw.precipitation[i]!,
+      rain,
+      snowfall,
+      precipitationProbability: raw.precipitation_probability[i]!,
+      weatherCode: raw.weather_code[i]!,
+      windSpeed: raw.wind_speed_10m[i]!,
+      windDirection: raw.wind_direction_10m[i]!,
+      windGusts: raw.wind_gusts_10m[i]!,
+      freezingLevelHeight: raw.freezing_level_height[i]!,
+    };
+  });
 }
 
-function mapDaily(raw: OMForecastResponse['daily']): DailyMetrics[] {
-  return raw.time.map((t, i) => ({
-    date: t,
-    weatherCode: raw.weather_code[i]!,
-    temperatureMax: raw.temperature_2m_max[i]!,
-    temperatureMin: raw.temperature_2m_min[i]!,
-    apparentTemperatureMax: raw.apparent_temperature_max[i]!,
-    apparentTemperatureMin: raw.apparent_temperature_min[i]!,
-    uvIndexMax: raw.uv_index_max[i]!,
-    precipitationSum: raw.precipitation_sum[i]!,
-    rainSum: raw.rain_sum[i]!,
-    snowfallSum: raw.snowfall_sum[i]!,
-    precipitationProbabilityMax: raw.precipitation_probability_max[i]!,
-    windSpeedMax: raw.wind_speed_10m_max[i]!,
-    windGustsMax: raw.wind_gusts_10m_max[i]!,
-  }));
+function mapDaily(
+  raw: OMForecastResponse['daily'],
+  hourly: HourlyMetrics[],
+): DailyMetrics[] {
+  return raw.time.map((t, i) => {
+    // Recompute daily snow/rain sums from recalculated hourly data
+    const dayHourly = hourly.filter((h) => h.time.startsWith(t));
+    const { snowfallSum, rainSum } = recalcDailyFromHourly(
+      dayHourly.map((h) => h.snowfall),
+      dayHourly.map((h) => h.rain),
+    );
+
+    return {
+      date: t,
+      weatherCode: raw.weather_code[i]!,
+      temperatureMax: raw.temperature_2m_max[i]!,
+      temperatureMin: raw.temperature_2m_min[i]!,
+      apparentTemperatureMax: raw.apparent_temperature_max[i]!,
+      apparentTemperatureMin: raw.apparent_temperature_min[i]!,
+      uvIndexMax: raw.uv_index_max[i]!,
+      precipitationSum: raw.precipitation_sum[i]!,
+      rainSum,
+      snowfallSum,
+      precipitationProbabilityMax: raw.precipitation_probability_max[i]!,
+      windSpeedMax: raw.wind_speed_10m_max[i]!,
+      windGustsMax: raw.wind_gusts_10m_max[i]!,
+    };
+  });
 }
 
 export async function fetchForecast(
@@ -150,11 +175,12 @@ export async function fetchForecast(
   const url = `${BASE}/forecast?${qs(params)}`;
 
   const data = await fetchJSON<OMForecastResponse>(url);
+  const hourly = mapHourly(data.hourly, elevation);
   return {
     band,
     elevation,
-    hourly: mapHourly(data.hourly),
-    daily: mapDaily(data.daily),
+    hourly,
+    daily: mapDaily(data.daily, hourly),
   };
 }
 

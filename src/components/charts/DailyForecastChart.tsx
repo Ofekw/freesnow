@@ -26,7 +26,7 @@ export function DailyForecastChart({ daily }: Props) {
   const data = daily.map((d) => ({
     date: fmtDate(d.date + 'T12:00:00', { weekday: 'short', month: 'numeric', day: 'numeric' }),
     snow: isImperial ? +cmToIn(d.snowfallSum).toFixed(1) : +d.snowfallSum.toFixed(1),
-    rain: isImperial ? +(d.rainSum / 25.4).toFixed(2) : +d.rainSum.toFixed(1),
+    rain: isImperial ? +(d.rainSum / 25.4).toFixed(2) : +(d.rainSum / 10).toFixed(2),
     high: isImperial ? Math.round(d.temperatureMax * 9 / 5 + 32) : Math.round(d.temperatureMax),
     low: isImperial ? Math.round(d.temperatureMin * 9 / 5 + 32) : Math.round(d.temperatureMin),
     feelsHigh: isImperial ? Math.round(d.apparentTemperatureMax * 9 / 5 + 32) : Math.round(d.apparentTemperatureMax),

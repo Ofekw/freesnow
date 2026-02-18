@@ -35,7 +35,7 @@ export function ResortPage() {
     if (!resort) return;
     let cancelled = false;
     setHistLoading(true);
-    fetchForecast(resort.lat, resort.lon, resort.elevation.mid, 'mid', 1, 14, tz)
+    fetchForecast(resort.lat, resort.lon, resort.elevation[band], band, 1, 14, tz)
       .then((result) => {
         if (!cancelled) {
           const today = new Date().toISOString().slice(0, 10);
@@ -45,7 +45,7 @@ export function ResortPage() {
       .catch(() => { /* ignore */ })
       .finally(() => { if (!cancelled) setHistLoading(false); });
     return () => { cancelled = true; };
-  }, [resort, tz]);
+  }, [resort, tz, band]);
 
   // Reset selected day when forecast data is refetched (not on band change)
   useEffect(() => { setSelectedDayIdx(0); }, [forecast]);

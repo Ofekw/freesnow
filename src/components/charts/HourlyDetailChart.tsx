@@ -26,7 +26,7 @@ export function HourlyDetailChart({ hourly }: Props) {
   const data = hourly.map((h) => ({
     time: fmtDate(h.time, { weekday: 'short', hour: 'numeric' }),
     snow: isImperial ? +cmToIn(h.snowfall).toFixed(2) : +h.snowfall.toFixed(1),
-    rain: isImperial ? +(h.rain / 25.4).toFixed(2) : +h.rain.toFixed(1),
+    rain: isImperial ? +(h.rain / 25.4).toFixed(2) : +(h.rain / 10).toFixed(2),
     temp: isImperial ? Math.round(h.temperature * 9 / 5 + 32) : Math.round(h.temperature),
     feels: isImperial ? Math.round(h.apparentTemperature * 9 / 5 + 32) : Math.round(h.apparentTemperature),
     wind: isImperial ? Math.round(h.windSpeed * 0.621371) : Math.round(h.windSpeed),
