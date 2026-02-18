@@ -216,7 +216,7 @@ export function ResortPage() {
 
           {/* ─── CONDITIONS SECTION ─── */}
           <section className="resort-page__section">
-            <h2 className="section-title">📊 Detailed Conditions — {selectedDayLabel}</h2>
+            <h2 className="section-title">Detailed Conditions — {selectedDayLabel}</h2>
             <HourlyDetailChart hourly={selectedDayHourly.length > 0 ? selectedDayHourly : bandData.hourly.slice(0, 24)} />
           </section>
 
@@ -236,7 +236,7 @@ export function ResortPage() {
 
       {/* ─── RECENT SNOWFALL ─── */}
       <section className="resort-page__section">
-        <h2 className="section-title">📅 Recent Snowfall (past 14 days)</h2>
+        <h2 className="section-title">Recent Snowfall (past 14 days)</h2>
         {histLoading ? (
           <div className="resort-page__loader">Loading history…</div>
         ) : recentDays.length > 0 ? (
