@@ -106,6 +106,30 @@ describe('recalcHourly', () => {
     expect(cold.snowfall).toBe(1.8);
   });
 
+  it('preserves precip as snow when station is above freezing level even with warm temps', () => {
+    // Station at 2000m, freezing level at 500m (well below), but warm temp of 3°C
+    // Without clamping, SLR would be 0 and precip would be lost
+    const result = recalcHourly(
+      { precipitation: 1.0, rain: 0, snowfall: 0, temperature: 3, freezingLevelHeight: 500 },
+      2000,
+    );
+    // Should still produce snow (with clamped temp of 0°C → SLR 1.0)
+    expect(result.snowfall).toBe(1.0);
+    expect(result.rain).toBe(0);
+  });
+
+  it('handles edge case of freezing level below station with positive temp', () => {
+    // Station at 1500m, freezing level at 1000m, temp 1°C
+    // Station is 500m above freezing level → should be all snow with clamped temp
+    const result = recalcHourly(
+      { precipitation: 2.0, rain: 0, snowfall: 0, temperature: 1, freezingLevelHeight: 1000 },
+      1500,
+    );
+    // Clamped to 0°C → SLR 1.0
+    expect(result.snowfall).toBe(2.0);
+    expect(result.rain).toBe(0);
+  });
+
   it('Crystal Mountain mid example: ~3.9cm instead of 1.4cm', () => {
     // Simulates Feb 18 hourly data for Crystal Mountain mid (1800m)
     // Key hours with precip: temps around -7 to -13°C, freezing level 0-680m
