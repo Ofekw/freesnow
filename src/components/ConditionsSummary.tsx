@@ -202,29 +202,30 @@ export function ConditionsSummary({ bands, selectedDayIdx, elevations }: Props) 
           </div>
         )}
 
-        {/* Snowpack depth row */}
-        {bandRows.some((r) => r.hourly.some((h) => h.snowDepth != null && h.snowDepth > 0)) && (
-          <div className="conditions-summary__row" role="row">
-            <div className="conditions-summary__cell conditions-summary__cell--label" role="rowheader">
-              <Layers size={14} className="label-icon" /> Snowpack
+        {/* Snowpack depth row — snow_depth is a grid-cell value (same
+            regardless of elevation parameter), so show a single value. */}
+        {(() => {
+          const allDepths = bandRows
+            .flatMap((r) => r.hourly)
+            .filter((h) => h.snowDepth != null && h.snowDepth > 0)
+            .map((h) => h.snowDepth!);
+          const maxDepthCm = allDepths.length > 0 ? Math.max(...allDepths) * 100 : null;
+          if (maxDepthCm == null || maxDepthCm <= 0) return null;
+          return (
+            <div className="conditions-summary__row" role="row">
+              <div className="conditions-summary__cell conditions-summary__cell--label" role="rowheader">
+                <Layers size={14} className="label-icon" /> Snowpack
+              </div>
+              <div className="conditions-summary__cell conditions-summary__cell--full" role="cell" style={{ gridColumn: 'span 3' }}>
+                <span className="conditions-summary__snowpack">
+                  {snow === 'in'
+                    ? `${Math.round(cmToIn(maxDepthCm))}"`
+                    : `${Math.round(maxDepthCm)}cm`}
+                </span>
+              </div>
             </div>
-            {bandRows.map((row) => {
-              const depths = row.hourly.filter((h) => h.snowDepth != null).map((h) => h.snowDepth!);
-              const maxDepthCm = depths.length > 0 ? Math.max(...depths) * 100 : null;
-              return (
-                <div key={row.label} className="conditions-summary__cell" role="cell">
-                  {maxDepthCm != null && maxDepthCm > 0 ? (
-                    <span className="conditions-summary__snowpack">
-                      {snow === 'in'
-                        ? `${Math.round(cmToIn(maxDepthCm))}"`
-                        : `${Math.round(maxDepthCm)}cm`}
-                    </span>
-                  ) : '—'}
-                </div>
-              );
-            })}
-          </div>
-        )}
+          );
+        })()}
       </div>
     </div>
   );

@@ -149,4 +149,50 @@ describe('ConditionsSummary', () => {
     const snowCells = screen.getAllByText('3.9"');
     expect(snowCells.length).toBe(3);
   });
+
+  it('renders a single snowpack value when snowDepth data exists', () => {
+    // Create bands where hourly data includes snowDepth
+    const bandsWithSnow = {
+      base: {
+        ...makeBand('base', 2475),
+        hourly: [
+          { ...makeHourly('2025-01-15T08:00:00'), snowDepth: 1.5 },
+          { ...makeHourly('2025-01-15T09:00:00'), snowDepth: 1.5 },
+        ],
+      },
+      mid: {
+        ...makeBand('mid', 3050),
+        hourly: [
+          { ...makeHourly('2025-01-15T08:00:00'), snowDepth: 1.5 },
+          { ...makeHourly('2025-01-15T09:00:00'), snowDepth: 1.5 },
+        ],
+      },
+      top: {
+        ...makeBand('top', 3527),
+        hourly: [
+          { ...makeHourly('2025-01-15T08:00:00'), snowDepth: 1.5 },
+          { ...makeHourly('2025-01-15T09:00:00'), snowDepth: 1.5 },
+        ],
+      },
+    };
+    render(
+      <UnitsProvider>
+        <TimezoneProvider>
+          <ConditionsSummary
+            bands={bandsWithSnow}
+            selectedDayIdx={0}
+            elevations={elevations}
+          />
+        </TimezoneProvider>
+      </UnitsProvider>,
+    );
+    expect(screen.getByText('Snowpack')).toBeInTheDocument();
+    // 1.5m → 150cm → 59" in imperial (single value, not per-band)
+    expect(screen.getByText('59"')).toBeInTheDocument();
+  });
+
+  it('hides snowpack row when no snowDepth data exists', () => {
+    renderSummary();
+    expect(screen.queryByText('Snowpack')).not.toBeInTheDocument();
+  });
 });

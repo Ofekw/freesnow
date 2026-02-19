@@ -107,7 +107,7 @@ export function averageHourlyArrays(models: RawHourly[]): RawHourly {
 
   // Pre-allocate output arrays
   const out: RawHourly = {
-    time: times,
+    time: [],
     temperature_2m: [],
     apparent_temperature: [],
     relative_humidity_2m: [],
@@ -143,35 +143,42 @@ export function averageHourlyArrays(models: RawHourly[]): RawHourly {
       const idx = modelTimeIndex[m]!.get(t);
       if (idx === undefined) continue;
       const model = models[m]!;
-      temps.push(model.temperature_2m[idx]!);
-      apparents.push(model.apparent_temperature[idx]!);
-      humidities.push(model.relative_humidity_2m[idx]!);
-      precips.push(model.precipitation[idx]!);
-      rains.push(model.rain[idx]!);
-      snowfalls.push(model.snowfall[idx]!);
-      precipProbs.push(model.precipitation_probability[idx]!);
-      wcodes.push(model.weather_code[idx]!);
-      winds.push(model.wind_speed_10m[idx]!);
-      windDirs.push(model.wind_direction_10m[idx]!);
-      gusts.push(model.wind_gusts_10m[idx]!);
-      freezingLevels.push(model.freezing_level_height[idx]!);
-      if (model.snow_depth?.[idx] !== undefined) {
+
+      // Guard against null values — some models (e.g. HRRR) return null for
+      // fields they don't support.  Only push real numbers.
+      if (model.temperature_2m[idx] != null) temps.push(model.temperature_2m[idx]!);
+      if (model.apparent_temperature[idx] != null) apparents.push(model.apparent_temperature[idx]!);
+      if (model.relative_humidity_2m[idx] != null) humidities.push(model.relative_humidity_2m[idx]!);
+      if (model.precipitation[idx] != null) precips.push(model.precipitation[idx]!);
+      if (model.rain[idx] != null) rains.push(model.rain[idx]!);
+      if (model.snowfall[idx] != null) snowfalls.push(model.snowfall[idx]!);
+      if (model.precipitation_probability[idx] != null) precipProbs.push(model.precipitation_probability[idx]!);
+      if (model.weather_code[idx] != null) wcodes.push(model.weather_code[idx]!);
+      if (model.wind_speed_10m[idx] != null) winds.push(model.wind_speed_10m[idx]!);
+      if (model.wind_direction_10m[idx] != null) windDirs.push(model.wind_direction_10m[idx]!);
+      if (model.wind_gusts_10m[idx] != null) gusts.push(model.wind_gusts_10m[idx]!);
+      if (model.freezing_level_height[idx] != null) freezingLevels.push(model.freezing_level_height[idx]!);
+      if (model.snow_depth?.[idx] != null) {
         snowDepths.push(model.snow_depth[idx]!);
       }
     }
 
+    // Skip time steps where no model provided usable data for core fields
+    if (temps.length === 0) continue;
+
+    out.time.push(t);
     out.temperature_2m.push(r2(mean(temps)));
-    out.apparent_temperature.push(r2(mean(apparents)));
-    out.relative_humidity_2m.push(r2(mean(humidities)));
-    out.precipitation.push(r2(median(precips)));
-    out.rain.push(r2(median(rains)));
-    out.snowfall.push(r2(median(snowfalls)));
-    out.precipitation_probability.push(r2(mean(precipProbs)));
-    out.weather_code.push(mode(wcodes));
-    out.wind_speed_10m.push(r2(mean(winds)));
-    out.wind_direction_10m.push(r2(meanAngle(windDirs)));
-    out.wind_gusts_10m.push(r2(mean(gusts)));
-    out.freezing_level_height.push(r2(mean(freezingLevels)));
+    out.apparent_temperature.push(apparents.length > 0 ? r2(mean(apparents)) : r2(mean(temps)));
+    out.relative_humidity_2m.push(humidities.length > 0 ? r2(mean(humidities)) : 0);
+    out.precipitation.push(precips.length > 0 ? r2(median(precips)) : 0);
+    out.rain.push(rains.length > 0 ? r2(median(rains)) : 0);
+    out.snowfall.push(snowfalls.length > 0 ? r2(median(snowfalls)) : 0);
+    out.precipitation_probability.push(precipProbs.length > 0 ? r2(mean(precipProbs)) : 0);
+    out.weather_code.push(wcodes.length > 0 ? mode(wcodes) : 0);
+    out.wind_speed_10m.push(winds.length > 0 ? r2(mean(winds)) : 0);
+    out.wind_direction_10m.push(windDirs.length > 0 ? r2(meanAngle(windDirs)) : 0);
+    out.wind_gusts_10m.push(gusts.length > 0 ? r2(mean(gusts)) : 0);
+    out.freezing_level_height.push(freezingLevels.length > 0 ? r2(mean(freezingLevels)) : 0);
     if (hasSnowDepth && snowDepths.length > 0) {
       out.snow_depth!.push(r2(mean(snowDepths)));
     } else if (hasSnowDepth) {
@@ -206,7 +213,7 @@ export function averageDailyArrays(models: RawDaily[]): RawDaily {
   const times = [...timeSet].sort();
 
   const out: RawDaily = {
-    time: times,
+    time: [],
     weather_code: [],
     temperature_2m_max: [],
     temperature_2m_min: [],
@@ -239,32 +246,36 @@ export function averageDailyArrays(models: RawDaily[]): RawDaily {
       const idx = modelTimeIndex[m]!.get(t);
       if (idx === undefined) continue;
       const model = models[m]!;
-      wcodes.push(model.weather_code[idx]!);
-      tmaxs.push(model.temperature_2m_max[idx]!);
-      tmins.push(model.temperature_2m_min[idx]!);
-      atMaxs.push(model.apparent_temperature_max[idx]!);
-      atMins.push(model.apparent_temperature_min[idx]!);
-      uvs.push(model.uv_index_max[idx]!);
-      precipSums.push(model.precipitation_sum[idx]!);
-      rainSums.push(model.rain_sum[idx]!);
-      snowSums.push(model.snowfall_sum[idx]!);
-      ppMaxs.push(model.precipitation_probability_max[idx]!);
-      wsMaxs.push(model.wind_speed_10m_max[idx]!);
-      wgMaxs.push(model.wind_gusts_10m_max[idx]!);
+      if (model.weather_code[idx] != null) wcodes.push(model.weather_code[idx]!);
+      if (model.temperature_2m_max[idx] != null) tmaxs.push(model.temperature_2m_max[idx]!);
+      if (model.temperature_2m_min[idx] != null) tmins.push(model.temperature_2m_min[idx]!);
+      if (model.apparent_temperature_max[idx] != null) atMaxs.push(model.apparent_temperature_max[idx]!);
+      if (model.apparent_temperature_min[idx] != null) atMins.push(model.apparent_temperature_min[idx]!);
+      if (model.uv_index_max[idx] != null) uvs.push(model.uv_index_max[idx]!);
+      if (model.precipitation_sum[idx] != null) precipSums.push(model.precipitation_sum[idx]!);
+      if (model.rain_sum[idx] != null) rainSums.push(model.rain_sum[idx]!);
+      if (model.snowfall_sum[idx] != null) snowSums.push(model.snowfall_sum[idx]!);
+      if (model.precipitation_probability_max[idx] != null) ppMaxs.push(model.precipitation_probability_max[idx]!);
+      if (model.wind_speed_10m_max[idx] != null) wsMaxs.push(model.wind_speed_10m_max[idx]!);
+      if (model.wind_gusts_10m_max[idx] != null) wgMaxs.push(model.wind_gusts_10m_max[idx]!);
     }
 
-    out.weather_code.push(mode(wcodes));
+    // Skip days where no model provided usable temperature data
+    if (tmaxs.length === 0) continue;
+
+    out.time.push(t);
+    out.weather_code.push(wcodes.length > 0 ? mode(wcodes) : 0);
     out.temperature_2m_max.push(r2(mean(tmaxs)));
-    out.temperature_2m_min.push(r2(mean(tmins)));
-    out.apparent_temperature_max.push(r2(mean(atMaxs)));
-    out.apparent_temperature_min.push(r2(mean(atMins)));
-    out.uv_index_max.push(r2(mean(uvs)));
-    out.precipitation_sum.push(r2(median(precipSums)));
-    out.rain_sum.push(r2(median(rainSums)));
-    out.snowfall_sum.push(r2(median(snowSums)));
-    out.precipitation_probability_max.push(r2(mean(ppMaxs)));
-    out.wind_speed_10m_max.push(r2(mean(wsMaxs)));
-    out.wind_gusts_10m_max.push(r2(mean(wgMaxs)));
+    out.temperature_2m_min.push(tmins.length > 0 ? r2(mean(tmins)) : r2(mean(tmaxs)));
+    out.apparent_temperature_max.push(atMaxs.length > 0 ? r2(mean(atMaxs)) : r2(mean(tmaxs)));
+    out.apparent_temperature_min.push(atMins.length > 0 ? r2(mean(atMins)) : r2(mean(tmins.length > 0 ? tmins : tmaxs)));
+    out.uv_index_max.push(uvs.length > 0 ? r2(mean(uvs)) : 0);
+    out.precipitation_sum.push(precipSums.length > 0 ? r2(median(precipSums)) : 0);
+    out.rain_sum.push(rainSums.length > 0 ? r2(median(rainSums)) : 0);
+    out.snowfall_sum.push(snowSums.length > 0 ? r2(median(snowSums)) : 0);
+    out.precipitation_probability_max.push(ppMaxs.length > 0 ? r2(mean(ppMaxs)) : 0);
+    out.wind_speed_10m_max.push(wsMaxs.length > 0 ? r2(mean(wsMaxs)) : 0);
+    out.wind_gusts_10m_max.push(wgMaxs.length > 0 ? r2(mean(wgMaxs)) : 0);
   }
 
   return out;
@@ -342,14 +353,17 @@ function meanAngle(degrees: number[]): number {
 /**
  * Choose which Open-Meteo models to fetch based on the resort's country.
  *
- * - US resorts get HRRR (3 km, 48 h) for short-range plus GFS and ECMWF.
- * - Canadian resorts replace HRRR with GEM (Environment Canada).
- * - All regions include GFS and ECMWF as baseline global models.
+ * Uses GFS + ECMWF as baseline global models for all regions.
+ * Canadian resorts additionally include GEM (Environment Canada).
+ *
+ * Note: HRRR (`ncep_hrrr_conus_15min`) was evaluated but excluded because
+ * it returns 87% null values over a 7-day window (only covers ~48h) and
+ * doesn't support several fields (apparent_temperature, humidity, weather_code,
+ * freezing_level_height, precipitation_probability).  The marginal benefit
+ * doesn't justify the data quality issues.
  */
 export function modelsForCountry(country: string): string[] {
   switch (country) {
-    case 'US':
-      return ['gfs_seamless', 'ecmwf_ifs025', 'hrrr'];
     case 'CA':
       return ['gfs_seamless', 'ecmwf_ifs025', 'gem_seamless'];
     default:

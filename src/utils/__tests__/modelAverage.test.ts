@@ -162,6 +162,42 @@ describe('averageHourlyArrays', () => {
     const result = averageHourlyArrays([m1, m2, m3]);
     expect(result.weather_code[0]).toBe(71); // mode = 71
   });
+
+  it('averages snow_depth from models that provide it', () => {
+    const m1: RawHourly = {
+      ...makeHourly({ time: ['T00'] }),
+      snow_depth: [1.5],
+    };
+    const m2: RawHourly = {
+      ...makeHourly({ time: ['T00'] }),
+      snow_depth: [0.9],
+    };
+    const result = averageHourlyArrays([m1, m2]);
+    expect(result.snow_depth).toBeDefined();
+    expect(result.snow_depth![0]).toBe(1.2); // mean(1.5, 0.9)
+  });
+
+  it('excludes null snow_depth values from the mean', () => {
+    const m1: RawHourly = {
+      ...makeHourly({ time: ['T00'] }),
+      snow_depth: [1.0],
+    };
+    const m2: RawHourly = {
+      ...makeHourly({ time: ['T00'] }),
+      snow_depth: [null as unknown as number], // ECMWF returns nulls
+    };
+    const result = averageHourlyArrays([m1, m2]);
+    expect(result.snow_depth).toBeDefined();
+    // Only m1's real value should be used, not (1.0 + 0) / 2
+    expect(result.snow_depth![0]).toBe(1.0);
+  });
+
+  it('omits snow_depth when no model provides it', () => {
+    const m1 = makeHourly({ time: ['T00'] });
+    const m2 = makeHourly({ time: ['T00'] });
+    const result = averageHourlyArrays([m1, m2]);
+    expect(result.snow_depth).toBeUndefined();
+  });
 });
 
 /* ── averageDailyArrays ───────────────────────── */
@@ -268,18 +304,17 @@ describe('blendWithNWS', () => {
 /* ── modelsForCountry ──────────────────────────── */
 
 describe('modelsForCountry', () => {
-  it('returns HRRR for US resorts', () => {
+  it('returns GFS + ECMWF for US resorts (HRRR excluded)', () => {
     const models = modelsForCountry('US');
-    expect(models).toContain('hrrr');
-    expect(models).toContain('gfs_seamless');
-    expect(models).toContain('ecmwf_ifs025');
+    expect(models).toEqual(['gfs_seamless', 'ecmwf_ifs025']);
+    expect(models).not.toContain('ncep_hrrr_conus_15min');
   });
 
   it('returns GEM for Canadian resorts', () => {
     const models = modelsForCountry('CA');
     expect(models).toContain('gem_seamless');
     expect(models).toContain('gfs_seamless');
-    expect(models).not.toContain('hrrr');
+    expect(models).toContain('ecmwf_ifs025');
   });
 
   it('returns basic models for other countries', () => {

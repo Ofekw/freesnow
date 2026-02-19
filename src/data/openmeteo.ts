@@ -24,10 +24,19 @@ function qs(params: Record<string, string | number | boolean>): string {
     .join('&');
 }
 
-async function fetchJSON<T>(url: string): Promise<T> {
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`Open-Meteo ${res.status}: ${res.statusText}`);
-  return res.json() as Promise<T>;
+async function fetchJSON<T>(url: string, retries = 3): Promise<T> {
+  for (let attempt = 0; attempt < retries; attempt++) {
+    const res = await fetch(url);
+    if (res.ok) return res.json() as Promise<T>;
+    // Retry on 429 (rate limit) and 5xx with exponential backoff
+    if ((res.status === 429 || res.status >= 500) && attempt < retries - 1) {
+      const delay = Math.min(1000 * 2 ** attempt, 8000);
+      await new Promise((r) => setTimeout(r, delay));
+      continue;
+    }
+    throw new Error(`Open-Meteo ${res.status}: ${res.statusText}`);
+  }
+  throw new Error('Open-Meteo: max retries exceeded');
 }
 
 /* ── Forecast ───────────────────────────────────── */
@@ -193,10 +202,79 @@ export async function fetchForecast(
 
 /* ── Multi-Model Forecast ──────────────────────── */
 
+/** Response shape when multiple models are requested in a single call. */
+interface OMMultiModelResponse {
+  hourly: Record<string, (number | null)[]> & { time: string[] };
+  daily: Record<string, (number | null)[]> & { time: string[] };
+}
+
+/** Hourly variable names (without model suffix). */
+const HOURLY_KEYS: (keyof RawHourly)[] = [
+  'temperature_2m', 'apparent_temperature', 'relative_humidity_2m',
+  'precipitation', 'rain', 'snowfall', 'precipitation_probability',
+  'weather_code', 'wind_speed_10m', 'wind_direction_10m', 'wind_gusts_10m',
+  'freezing_level_height', 'snow_depth',
+];
+
+/** Daily variable names (without model suffix). */
+const DAILY_KEYS: (keyof RawDaily)[] = [
+  'weather_code', 'temperature_2m_max', 'temperature_2m_min',
+  'apparent_temperature_max', 'apparent_temperature_min', 'uv_index_max',
+  'precipitation_sum', 'rain_sum', 'snowfall_sum',
+  'precipitation_probability_max', 'wind_speed_10m_max', 'wind_gusts_10m_max',
+];
+
 /**
- * Fetch the same location from multiple Open-Meteo models in parallel,
- * average their raw output, then run the SLR recalculation on the averaged
- * data.  Falls back to a single `best_match` call if every model fails.
+ * Split a multi-model response (fields suffixed with `_modelName`) into
+ * separate per-model RawHourly / RawDaily arrays for the averaging pipeline.
+ */
+function splitMultiModelResponse(
+  data: OMMultiModelResponse,
+  models: string[],
+): { hourlyModels: RawHourly[]; dailyModels: RawDaily[] } {
+  const hourlyModels: RawHourly[] = [];
+  const dailyModels: RawDaily[] = [];
+
+  for (const model of models) {
+    // -- Hourly --
+    const h: Record<string, number[]> = { time: [] as unknown as number[] };
+    let hasAnyHourly = false;
+    for (const key of HOURLY_KEYS) {
+      const suffixed = `${key}_${model}`;
+      if (suffixed in data.hourly) {
+        h[key] = data.hourly[suffixed] as number[];
+        hasAnyHourly = true;
+      }
+    }
+    if (hasAnyHourly) {
+      hourlyModels.push({ time: data.hourly.time, ...h } as unknown as RawHourly);
+    }
+
+    // -- Daily --
+    const d: Record<string, number[]> = { time: [] as unknown as number[] };
+    let hasAnyDaily = false;
+    for (const key of DAILY_KEYS) {
+      const suffixed = `${key}_${model}`;
+      if (suffixed in data.daily) {
+        d[key] = data.daily[suffixed] as number[];
+        hasAnyDaily = true;
+      }
+    }
+    if (hasAnyDaily) {
+      dailyModels.push({ time: data.daily.time, ...d } as unknown as RawDaily);
+    }
+  }
+
+  return { hourlyModels, dailyModels };
+}
+
+/**
+ * Fetch a single Open-Meteo request with all models combined.
+ * The API returns fields suffixed by model name (e.g. `temperature_2m_gfs_seamless`).
+ * We split, average, then run the SLR recalculation.
+ *
+ * This uses **1 API call** instead of N (one per model), dramatically
+ * reducing rate-limit pressure.
  */
 export async function fetchMultiModelForecast(
   lat: number,
@@ -208,55 +286,47 @@ export async function fetchMultiModelForecast(
   pastDays: number = 0,
   timezone: string = 'auto',
 ): Promise<BandForecast> {
-  // Fire all model fetches in parallel; collect successes
-  const results = await Promise.allSettled(
-    models.map((model) => {
-      const params: Record<string, string | number | boolean> = {
-        latitude: lat,
-        longitude: lon,
-        elevation,
-        hourly: HOURLY_VARS,
-        daily: DAILY_VARS,
-        timezone,
-        forecast_days: forecastDays,
-        models: model,
-      };
-      if (pastDays > 0) params.past_days = pastDays;
-      const url = `${BASE}/forecast?${qs(params)}`;
-      return fetchJSON<OMForecastResponse>(url);
-    }),
-  );
+  const params: Record<string, string | number | boolean> = {
+    latitude: lat,
+    longitude: lon,
+    elevation,
+    hourly: HOURLY_VARS,
+    daily: DAILY_VARS,
+    timezone,
+    forecast_days: forecastDays,
+    models: models.join(','),
+  };
+  if (pastDays > 0) params.past_days = pastDays;
+  const url = `${BASE}/forecast?${qs(params)}`;
 
-  const successful = results
-    .filter((r): r is PromiseFulfilledResult<OMForecastResponse> => r.status === 'fulfilled')
-    .map((r) => r.value);
-
-  // If no model succeeded, fall back to the default best_match call
-  if (successful.length === 0) {
+  let data: OMMultiModelResponse;
+  try {
+    data = await fetchJSON<OMMultiModelResponse>(url);
+  } catch {
+    // If multi-model request fails, fall back to default best_match
     return fetchForecast(lat, lon, elevation, band, forecastDays, pastDays, timezone);
   }
 
-  // If only one model returned data, just use it directly
-  if (successful.length === 1) {
-    const data = successful[0]!;
-    const hourly = mapHourly(data.hourly, elevation);
-    return { band, elevation, hourly, daily: mapDaily(data.daily, hourly) };
+  const { hourlyModels, dailyModels } = splitMultiModelResponse(data, models);
+
+  // If split produced nothing usable, fall back
+  if (hourlyModels.length === 0) {
+    return fetchForecast(lat, lon, elevation, band, forecastDays, pastDays, timezone);
   }
 
-  // Average raw hourly + daily across models, then apply recalc
-  const avgHourly = averageHourlyArrays(
-    successful.map((d) => d.hourly as RawHourly),
-  );
-  const avgDaily = averageDailyArrays(
-    successful.map((d) => d.daily as RawDaily),
-  );
+  const avgHourly = averageHourlyArrays(hourlyModels);
+  const avgDaily = dailyModels.length > 0
+    ? averageDailyArrays(dailyModels)
+    : null;
 
   const hourly = mapHourly(avgHourly as OMForecastResponse['hourly'], elevation);
   return {
     band,
     elevation,
     hourly,
-    daily: mapDaily(avgDaily as OMForecastResponse['daily'], hourly),
+    daily: avgDaily
+      ? mapDaily(avgDaily as OMForecastResponse['daily'], hourly)
+      : [],
   };
 }
 
