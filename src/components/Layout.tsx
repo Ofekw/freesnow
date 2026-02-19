@@ -11,8 +11,18 @@ export function Layout() {
   const { statusIcon, statusTitle, toggleAlerts, isSupported, enabled, permission } = useSnowAlerts();
   const [tzOpen, setTzOpen] = useState(false);
   const [tzSearch, setTzSearch] = useState('');
+  const [showScrollTop, setShowScrollTop] = useState(false);
   const tzRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
+
+  // Show scroll-to-top button when scrolled past 400px
+  useEffect(() => {
+    function handleScroll() {
+      setShowScrollTop(window.scrollY > 400);
+    }
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   // Compute UTC offsets once (they only change with DST, fine to recompute on render)
   const tzWithOffsets = useMemo(
@@ -154,6 +164,16 @@ export function Layout() {
           </a>
         </div>
       </footer>
+
+      {/* Scroll to top */}
+      <button
+        className={`scroll-top ${showScrollTop ? 'scroll-top--visible' : ''}`}
+        onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+        aria-label="Scroll to top"
+        title="Scroll to top"
+      >
+        ↑
+      </button>
     </div>
   );
 }

@@ -6,12 +6,14 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-sm);
-  transition: box-shadow 0.2s, transform 0.15s;
+  transition: box-shadow 0.2s, transform 0.2s, border-color 0.2s;
   cursor: pointer;
+  animation: fadeInUp 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 .fav-card:hover {
-  box-shadow: var(--shadow-card);
-  transform: translateY(-2px);
+  box-shadow: var(--shadow-card), 0 0 20px rgba(56, 189, 248, 0.08);
+  transform: translateY(-3px);
+  border-color: rgba(56, 189, 248, 0.2);
 }
 
 /* Header */
@@ -59,11 +61,22 @@
   opacity: 0.7;
 }
 
-/* Loading */
+/* Loading skeleton */
 .fav-card__loading {
   font-size: 0.8rem;
   color: var(--color-text-muted);
   padding: var(--space-sm) 0;
+}
+
+.fav-card__skeleton {
+  padding: var(--space-xs) 0;
+}
+
+.fav-card__skeleton-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-xs);
+  margin-top: var(--space-sm);
 }
 
 /* Tomorrow strip */
@@ -117,5 +130,9 @@
   font-size: 1.1rem;
   font-weight: 800;
   color: var(--color-accent);
+  transition: text-shadow 0.3s;
+}
+.fav-card__snow-value:not(:empty) {
+  animation: snowPulse 3s ease-in-out infinite;
 }
 

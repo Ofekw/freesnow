@@ -109,7 +109,15 @@ export function FavoriteCard({ resort, onToggleFavorite }: Props) {
       </p>
 
       {loading ? (
-        <div className="fav-card__loading">Loading forecast…</div>
+        <div className="fav-card__skeleton">
+          <div className="skeleton skeleton--text" style={{ width: '80%' }} />
+          <div className="skeleton skeleton--text" style={{ width: '60%', marginTop: '6px' }} />
+          <div className="fav-card__skeleton-grid">
+            <div className="skeleton skeleton--card" style={{ height: '48px' }} />
+            <div className="skeleton skeleton--card" style={{ height: '48px' }} />
+            <div className="skeleton skeleton--card" style={{ height: '48px' }} />
+          </div>
+        </div>
       ) : summary ? (
         <>
           {/* Tomorrow row */}

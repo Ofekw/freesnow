@@ -411,6 +411,120 @@ Higher elevations now correctly show ≥ snowfall of lower elevations because:
 - `src/components/charts/DailyForecastChart.tsx`
 - `src/components/charts/HourlyDetailChart.tsx`
 
+---
+
+## Phase 14: UI/UX Overhaul — Phase 1 (Design System & ECharts Migration)
+
+### What changed
+- **Chart library migration**: Replaced Recharts with Apache ECharts 6 + echarts-for-react 3.0.6. All 7 chart components fully rewritten.
+- **Design tokens overhaul**: New deeper navy Grafana-inspired palette (`--color-bg: #0b1120`, `--color-surface: #141b2d`, `--color-surface-raised: #1e2942`), semantic chart color tokens (`--chart-snow`, `--chart-rain`, `--chart-temp-high`, etc.), glow shadows.
+- **Typography**: Added DM Sans (display/UI) and Space Mono (data/mono) via Google Fonts.
+- **ECharts theme system**: Created centralized `echarts-theme.ts` with registered 'freesnow' theme and builder helpers (`makeTooltip`, `makeLegend`, `makeGrid`, `makeCategoryAxis`, `makeValueAxis`, `makeBarSeries`, `makeLineSeries`, `makeDashedLineSeries`, `makeDataZoom`).
+- **BaseChart wrapper**: New `BaseChart.tsx` thin wrapper applying theme, responsive sizing, optional cross-chart group sync.
+- **Chart feature improvements**:
+  - All charts now have toggleable legends (ECharts native)
+  - DailyForecastChart & HourlyDetailChart: dual Y-axes, feels-like dashed lines
+  - HourlyDetailChart: wind speed + gusts now rendered (previously computed but hidden)
+  - HourlySnowChart: precipitation probability now rendered as dotted line
+  - RecentSnowChart: proper legend + dataZoom slider for panning
+  - FreezingLevelChart: gradient fill + optional resort elevation markLine reference
+  - UVIndexChart: color-coded severity legend, value labels on bars, timezone-aware date formatting
+  - SnowHistoryChart: **bug fix** — now respects units context (was hardcoded to imperial)
+
+### Why it changed
+- UI/UX overhaul initiative for powder hunters — needed interactive Grafana-style charts with toggleable legends, uniform increments, rich tooltips, and dataZoom for exploration.
+- Recharts lacked native legend toggling, dataZoom, cross-chart sync, and built-in dark theme support.
+- Typography and color palette refresh to establish unique brand identity distinct from competitors (OpenSnow, snow-forecast.com).
+
+### Key files affected
+- `package.json` — echarts deps added, recharts removed
+- `index.html` — Google Fonts links, updated title/theme-color
+- `src/styles/index.css` — full design token overhaul
+- `src/components/charts/echarts-theme.ts` — NEW: theme + helpers
+- `src/components/charts/BaseChart.tsx` — NEW: wrapper component
+- `src/components/charts/DailyForecastChart.tsx` — rewritten
+- `src/components/charts/HourlyDetailChart.tsx` — rewritten
+- `src/components/charts/HourlySnowChart.tsx` — rewritten
+- `src/components/charts/RecentSnowChart.tsx` — rewritten
+- `src/components/charts/FreezingLevelChart.tsx` — rewritten
+- `src/components/charts/UVIndexChart.tsx` — rewritten
+- `src/components/charts/SnowHistoryChart.tsx` — rewritten
+- `src/pages/ResortPage.tsx` — added resortElevation prop to FreezingLevelChart
+
+---
+
+## Phase 15: UI/UX Overhaul — Phase 2 (Snow Timeline, Conditions Summary, Resort Page Restructure)
+
+### What changed
+- **SnowTimeline component** — OpenSnow-inspired compact past 7 + future 7 day snowfall bar chart with "today" divider. Shows at-a-glance snow trend with totals for each period. Uses CSS bars with gradient fill (future) vs muted (past). Placed in hero position on resort page.
+- **ConditionsSummary component** — snow-forecast.com-inspired 3-elevation comparison table for the selected day. Shows weather, temperature (high/low), snow, rain, wind (+ gusts), precipitation probability, and average freezing level across Base/Mid/Top bands. Uses CSS grid layout with responsive design.
+- **ResortPage restructure** — New information hierarchy:
+  1. Header + stats (unchanged)
+  2. **Snow Timeline** (hero position — first data the user sees)
+  3. Band toggle + refresh
+  4. **Conditions Summary** (all-elevation at-a-glance, with "All Elevations" badge)
+  5. 7-Day Snow section (day cards + DailyForecastChart + HourlySnowChart)
+  6. Hourly Detail chart
+  7. UV + Freezing Level grid
+  8. Recent Snowfall
+- **CSS polish** — Section header with badge component, stats row uses `font-mono` for data values, updated border/radius tokens.
+- **20 new tests** — 10 for SnowTimeline (rendering, data display, edge cases, accessibility), 10 for ConditionsSummary (table structure, elevation bands, weather data display, unit formatting).
+
+### Why it changed
+- Powder hunters need an instant visual read on the snow trend — the SnowTimeline gives this at a glance before any scrolling.
+- Comparing conditions across elevations (snow-forecast.com style) helps users decide which lifts to target.
+- Previous layout showed only the selected elevation band's conditions; now the ConditionsSummary shows all three bands simultaneously.
+
+### Key files affected
+- `src/components/SnowTimeline.tsx` — NEW
+- `src/components/SnowTimeline.css` — NEW
+- `src/components/ConditionsSummary.tsx` — NEW
+- `src/components/ConditionsSummary.css` — NEW
+- `src/components/__tests__/SnowTimeline.test.tsx` — NEW (10 tests)
+- `src/components/__tests__/ConditionsSummary.test.tsx` — NEW (10 tests)
+- `src/pages/ResortPage.tsx` — restructured layout + new component integration
+- `src/pages/ResortPage.css` — section header badge, stat font-mono, border updates
+
+---
+
+## Phase 16: UI/UX Overhaul — Phase 4 (Polish + Animations)
+
+### What changed
+- **Global animation system** — Added 6 `@keyframes` to `index.css`: `fadeInUp`, `fadeIn`, `slideInLeft`, `shimmer`, `pulseGlow`, `snowPulse`. Utility classes `.animate-fade-in-up`, `.animate-fade-in`, `.stagger-children` (10-step delay). Smooth scroll via `html { scroll-behavior: smooth }`. Full `prefers-reduced-motion: reduce` media query disables all animations/transitions for accessibility.
+- **Skeleton loading states** — Replaced plain "Loading forecast…" text with shimmer skeleton placeholders (`.skeleton`, `.skeleton--text`, `.skeleton--chart`, `.skeleton--card`). Applied to FavoriteCard loading state (3-column skeleton grid) and ResortPage initial loader (chart + text skeletons).
+- **Cross-chart tooltip sync** — BaseChart now calls `echarts.connect(group)` when a group prop is provided, enabling synchronized tooltips and dataZoom across charts sharing the same group ID. HourlyDetailChart, HourlySnowChart, and FreezingLevelChart each already pass group IDs.
+- **Section title accent** — `.section-title` now has a 3px left border accent (`border-left: 3px solid var(--color-accent)`) for visual hierarchy.
+- **Day card animations** — Day cards use `fadeInUp` entrance with stagger delays via `.stagger-children`. Added `:active` press state (`scale(0.97)`). Enhanced selected state with stronger box-shadow and inset glow.
+- **Card hover polish** — ResortCard and FavoriteCard hover states now include subtle accent border glow (`border-color: rgba(56, 189, 248, 0.15/0.2)`) and enhanced shadow. FavoriteCard snow values get `snowPulse` animation for subtle text glow.
+- **HomePage polish** — Search input gets cyan focus ring + glow shadow. Hero section, region sections animate in with `fadeInUp`. Region titles get left accent border. Favorites section gets ambient glow on hover.
+- **Scroll-to-top button** — New floating button (bottom-right) appears when scrolled past 400px. Pill shape, accent hover, smooth reveal animation. Responsive sizing on mobile.
+- **FAB group polish** — FABs get enhanced hover shadow (`box-shadow: 0 4px 16px rgba(56, 189, 248, 0.25)`). Favorite star on ResortPage gets `pulseGlow` when active.
+- **ElevationToggle polish** — Active state gets inset glow (`box-shadow: inset 0 0 12px rgba(56, 189, 248, 0.15)`).
+- **SnowTimeline + ConditionsSummary** — Both components get `fadeInUp` entrance animation.
+- **Focus visible** — Global `:focus-visible` ring (`2px solid var(--color-accent), offset 2px`) for keyboard accessibility.
+- **Bug fix** — Fixed typo `"reso  rt-page__chart-block"` → `"resort-page__chart-block"` in ResortPage.tsx.
+
+### Why it changed
+- Animations provide visual feedback, guide attention to new data, and make the UI feel more responsive/alive.
+- Skeleton loading states are a modern UX pattern that reduces perceived wait time vs. plain text spinners.
+- Cross-chart sync lets users correlate data across multiple hourly charts simultaneously.
+- Accessibility requirements demand motion reduction support and visible focus states.
+
+### Key files affected
+- `src/styles/index.css` — Global animations, skeletons, focus, reduced motion
+- `src/pages/ResortPage.tsx` — Skeleton loader, animation classes, stagger, typo fix
+- `src/pages/ResortPage.css` — Section accent, day card animations, stats hover, skeleton section
+- `src/pages/HomePage.css` — Search glow, hero animation, region title accent, favorites hover
+- `src/components/FavoriteCard.tsx` — Skeleton loading state
+- `src/components/FavoriteCard.css` — Skeleton grid, snow pulse, card hover glow
+- `src/components/ResortCard.css` — Card entrance animation, hover border glow
+- `src/components/Layout.tsx` — Scroll-to-top button (state + JSX)
+- `src/components/Layout.css` — Scroll-to-top styles, FAB hover shadow
+- `src/components/ElevationToggle.css` — Active inset glow
+- `src/components/SnowTimeline.css` — Entrance animation
+- `src/components/ConditionsSummary.css` — Entrance animation
+- `src/components/charts/BaseChart.tsx` — `echarts.connect()` for cross-chart sync
+
 ## Status vs Plan
 
 | Feature | Status |
@@ -438,6 +552,9 @@ Higher elevations now correctly show ≥ snowfall of lower elevations because:
 | Comprehensive UI unit tests | ✅ Complete |
 | PR screenshot generation | ✅ Complete |
 | Snowfall recalculation (accuracy fix) | ✅ Complete |
+| UI/UX Phase 1 — Design system + ECharts | ✅ Complete |
+| UI/UX Phase 2 — Snow Timeline + Conditions + Resort restructure | ✅ Complete |
+| UI/UX Phase 4 — Polish + Animations | ✅ Complete |
 | Map-based resort browser | 🔲 Not started |
 | Global resort coverage | 🔲 Not started |
 | Snow report / current conditions | 🔲 Not started |

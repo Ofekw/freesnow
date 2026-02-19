@@ -1,6 +1,7 @@
 .home__hero {
   text-align: center;
   padding: var(--space-2xl) 0 var(--space-lg);
+  animation: fadeInUp 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 .home__title {
@@ -26,6 +27,11 @@
   padding: var(--space-sm) var(--space-md);
   font-size: 1rem;
   border-radius: var(--radius-md);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.home__search:focus {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.15), 0 0 16px rgba(56, 189, 248, 0.1);
 }
 
 .home__empty {
@@ -36,6 +42,7 @@
 
 .home__region {
   margin-top: var(--space-xl);
+  animation: fadeInUp 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 .home__favorites {
@@ -43,6 +50,11 @@
   border: 1px solid rgba(245, 158, 11, 0.18);
   border-radius: var(--radius-md);
   padding: var(--space-md);
+  box-shadow: 0 0 24px rgba(245, 158, 11, 0.06);
+  transition: box-shadow 0.3s;
+}
+.home__favorites:hover {
+  box-shadow: 0 0 32px rgba(245, 158, 11, 0.1);
 }
 
 .home__region-title {
@@ -50,7 +62,9 @@
   font-weight: 700;
   margin-bottom: var(--space-md);
   padding-bottom: var(--space-xs);
+  padding-left: var(--space-sm);
   border-bottom: 1px solid var(--color-surface-alt);
+  border-left: 3px solid var(--color-accent);
 }
 
 .home__grid {

@@ -1,0 +1,205 @@
+/**
+ * ConditionsSummary — 3-elevation comparison table for selected day.
+ *
+ * Inspired by snow-forecast.com's multi-elevation condition table.
+ * Shows key conditions (temp, snow, rain, wind, freezing level) across
+ * all three elevation bands for an at-a-glance comparison.
+ */
+import type { BandForecast, DailyMetrics, HourlyMetrics } from '@/types';
+import { useUnits } from '@/context/UnitsContext';
+import { weatherDescription, fmtTemp, fmtElevation, fmtSnow } from '@/utils/weather';
+import './ConditionsSummary.css';
+
+interface Props {
+  /** All three band forecasts */
+  bands: {
+    base: BandForecast;
+    mid: BandForecast;
+    top: BandForecast;
+  };
+  /** Index of the selected day within the daily array */
+  selectedDayIdx: number;
+  /** Elevations in meters */
+  elevations: { base: number; mid: number; top: number };
+}
+
+interface BandRow {
+  label: string;
+  elevation: number;
+  daily: DailyMetrics | undefined;
+  hourly: HourlyMetrics[];
+}
+
+export function ConditionsSummary({ bands, selectedDayIdx, elevations }: Props) {
+  const { temp, elev, snow } = useUnits();
+  const isImperial = snow === 'in';
+
+  const bandRows: BandRow[] = (['top', 'mid', 'base'] as const).map((key) => {
+    const bandData = bands[key];
+    const daily = bandData.daily[selectedDayIdx];
+    const dayDate = daily?.date;
+    const hourly = dayDate
+      ? bandData.hourly.filter((h) => h.time.startsWith(dayDate))
+      : [];
+    return {
+      label: key.charAt(0).toUpperCase() + key.slice(1),
+      elevation: elevations[key],
+      daily,
+      hourly,
+    };
+  });
+
+  // Compute average freezing level from mid-level hourly (most representative)
+  const midHourly = bandRows.find((r) => r.label === 'Mid')?.hourly ?? [];
+  const avgFreezing = midHourly.length > 0
+    ? midHourly.reduce((s, h) => s + h.freezingLevelHeight, 0) / midHourly.length
+    : null;
+
+  const fmtWindSpeed = (kmh: number) => {
+    if (isImperial) return `${Math.round(kmh * 0.621371)}mph`;
+    return `${Math.round(kmh)}km/h`;
+  };
+
+  const fmtPrecip = (mm: number) => {
+    if (isImperial) return `${(mm / 25.4).toFixed(1)}"`;
+    return `${mm.toFixed(1)}mm`;
+  };
+
+  return (
+    <div className="conditions-summary" role="table" aria-label="Conditions by elevation">
+      <div className="conditions-summary__table">
+        {/* Header row */}
+        <div className="conditions-summary__row conditions-summary__row--header" role="row">
+          <div className="conditions-summary__cell conditions-summary__cell--label" role="columnheader">
+            Elevation
+          </div>
+          {bandRows.map((row) => (
+            <div key={row.label} className="conditions-summary__cell conditions-summary__cell--band" role="columnheader">
+              <span className="conditions-summary__band-name">{row.label}</span>
+              <span className="conditions-summary__band-elev">{fmtElevation(row.elevation, elev)}</span>
+            </div>
+          ))}
+        </div>
+
+        {/* Weather row */}
+        <div className="conditions-summary__row" role="row">
+          <div className="conditions-summary__cell conditions-summary__cell--label" role="rowheader">
+            Weather
+          </div>
+          {bandRows.map((row) => {
+            const desc = row.daily ? weatherDescription(row.daily.weatherCode) : null;
+            return (
+              <div key={row.label} className="conditions-summary__cell" role="cell">
+                {desc ? (
+                  <span className="conditions-summary__weather">
+                    <span className="conditions-summary__icon">{desc.icon}</span>
+                    <span className="conditions-summary__weather-label">{desc.label}</span>
+                  </span>
+                ) : '—'}
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Temperature row */}
+        <div className="conditions-summary__row" role="row">
+          <div className="conditions-summary__cell conditions-summary__cell--label" role="rowheader">
+            Temp
+          </div>
+          {bandRows.map((row) => (
+            <div key={row.label} className="conditions-summary__cell" role="cell">
+              {row.daily ? (
+                <span className="conditions-summary__temp">
+                  <span className="conditions-summary__temp-high">{fmtTemp(row.daily.temperatureMax, temp)}</span>
+                  <span className="conditions-summary__temp-sep">/</span>
+                  <span className="conditions-summary__temp-low">{fmtTemp(row.daily.temperatureMin, temp)}</span>
+                </span>
+              ) : '—'}
+            </div>
+          ))}
+        </div>
+
+        {/* Snow row */}
+        <div className="conditions-summary__row conditions-summary__row--highlight" role="row">
+          <div className="conditions-summary__cell conditions-summary__cell--label" role="rowheader">
+            ❄️ Snow
+          </div>
+          {bandRows.map((row) => (
+            <div key={row.label} className="conditions-summary__cell" role="cell">
+              {row.daily ? (
+                <span className={`conditions-summary__snow ${row.daily.snowfallSum > 0 ? 'has-snow' : ''}`}>
+                  {row.daily.snowfallSum > 0 ? fmtSnow(row.daily.snowfallSum, snow) : '—'}
+                </span>
+              ) : '—'}
+            </div>
+          ))}
+        </div>
+
+        {/* Rain row */}
+        <div className="conditions-summary__row" role="row">
+          <div className="conditions-summary__cell conditions-summary__cell--label" role="rowheader">
+            🌧️ Rain
+          </div>
+          {bandRows.map((row) => (
+            <div key={row.label} className="conditions-summary__cell" role="cell">
+              {row.daily ? (
+                <span className="conditions-summary__rain">
+                  {row.daily.rainSum > 0 ? fmtPrecip(row.daily.rainSum) : '—'}
+                </span>
+              ) : '—'}
+            </div>
+          ))}
+        </div>
+
+        {/* Wind row */}
+        <div className="conditions-summary__row" role="row">
+          <div className="conditions-summary__cell conditions-summary__cell--label" role="rowheader">
+            💨 Wind
+          </div>
+          {bandRows.map((row) => (
+            <div key={row.label} className="conditions-summary__cell" role="cell">
+              {row.daily ? (
+                <span className="conditions-summary__wind">
+                  <span>{fmtWindSpeed(row.daily.windSpeedMax)}</span>
+                  <span className="conditions-summary__gusts">
+                    gusts {fmtWindSpeed(row.daily.windGustsMax)}
+                  </span>
+                </span>
+              ) : '—'}
+            </div>
+          ))}
+        </div>
+
+        {/* Precip probability row */}
+        <div className="conditions-summary__row" role="row">
+          <div className="conditions-summary__cell conditions-summary__cell--label" role="rowheader">
+            ☔ Precip %
+          </div>
+          {bandRows.map((row) => (
+            <div key={row.label} className="conditions-summary__cell" role="cell">
+              {row.daily ? (
+                <span className="conditions-summary__precip-prob">
+                  {row.daily.precipitationProbabilityMax}%
+                </span>
+              ) : '—'}
+            </div>
+          ))}
+        </div>
+
+        {/* Freezing level row */}
+        {avgFreezing !== null && (
+          <div className="conditions-summary__row" role="row">
+            <div className="conditions-summary__cell conditions-summary__cell--label" role="rowheader">
+              🧊 Freeze lvl
+            </div>
+            <div className="conditions-summary__cell conditions-summary__cell--full" role="cell" style={{ gridColumn: 'span 3' }}>
+              <span className="conditions-summary__freezing">
+                ~{fmtElevation(avgFreezing, elev)}
+              </span>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
