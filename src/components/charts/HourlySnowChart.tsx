@@ -1,17 +1,20 @@
-import {
-  ResponsiveContainer,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ReferenceLine,
-} from 'recharts';
+import { useMemo } from 'react';
+import type { EChartsOption } from 'echarts';
 import type { HourlyMetrics } from '@/types';
 import { cmToIn } from '@/utils/weather';
 import { useUnits } from '@/context/UnitsContext';
 import { useTimezone } from '@/context/TimezoneContext';
+import { BaseChart } from './BaseChart';
+import {
+  COLORS,
+  makeTooltip,
+  makeLegend,
+  makeGrid,
+  makeCategoryAxis,
+  makeValueAxis,
+  makeBarSeries,
+  makeLineSeries,
+} from './echarts-theme';
 
 interface Props {
   hourly: HourlyMetrics[];
@@ -24,21 +27,75 @@ export function HourlySnowChart({ hourly, dayLabel }: Props) {
   const { fmtDate } = useTimezone();
   const isImperial = snowUnit === 'in';
 
-  const data = hourly.map((h) => {
-    const snowVal = isImperial ? +cmToIn(h.snowfall).toFixed(2) : +h.snowfall.toFixed(1);
-    return {
-      hour: fmtDate(h.time, { hour: 'numeric' }),
-      snow: snowVal,
-      prob: h.precipitationProbability,
-    };
-  });
-
   const totalSnow = hourly.reduce((s, h) => s + h.snowfall, 0);
   const totalDisplay = isImperial
     ? `${cmToIn(totalSnow).toFixed(1)}"`
     : `${totalSnow.toFixed(1)}cm`;
-  const precipLabel = isImperial ? 'in' : 'cm';
   const hasSnow = totalSnow > 0;
+  const precipLabel = isImperial ? 'in' : 'cm';
+
+  const option = useMemo<EChartsOption>(() => {
+    const hours = hourly.map((h) => fmtDate(h.time, { hour: 'numeric' }));
+    const snowData = hourly.map((h) =>
+      isImperial ? +cmToIn(h.snowfall).toFixed(2) : +h.snowfall.toFixed(1),
+    );
+    const probData = hourly.map((h) => h.precipitationProbability);
+
+    return {
+      tooltip: makeTooltip({
+        formatter(params: unknown) {
+          const items = Array.isArray(params) ? params as Array<{ seriesName: string; value: number; axisValueLabel: string; marker: string }> : [];
+          const first = items[0];
+          if (!first) return '';
+          let html = `<div style="font-weight:600;margin-bottom:4px">${first.axisValueLabel}</div>`;
+          for (const item of items) {
+            const unit = item.seriesName.includes('Snow') ? ` ${precipLabel}` : '%';
+            html += `<div>${item.marker} ${item.seriesName}: <strong>${item.value}${unit}</strong></div>`;
+          }
+          return html;
+        },
+      }),
+      legend: makeLegend(['Snow', 'Precip %'], { bottom: 0 }),
+      grid: makeGrid({ bottom: 48, left: 40, right: 40, top: 8 }),
+      xAxis: [makeCategoryAxis(hours, { axisTick: { show: false } })],
+      yAxis: [
+        makeValueAxis({
+          min: 0,
+          max: isImperial ? 1 : 2.5,
+          interval: isImperial ? 0.2 : 0.5,
+          axisLabel: {
+            color: COLORS.textMuted,
+            fontSize: 10,
+            fontFamily: "'Space Mono', monospace",
+          },
+        }),
+        makeValueAxis({
+          min: 0,
+          max: 100,
+          interval: 25,
+          position: 'right',
+          splitLine: { show: false },
+          axisLabel: {
+            color: COLORS.textMuted,
+            fontSize: 10,
+            fontFamily: "'Space Mono', monospace",
+            formatter: '{value}%',
+          },
+        }),
+      ],
+      series: [
+        makeBarSeries('Snow', snowData, COLORS.snow, {
+          yAxisIndex: 0,
+          barMaxWidth: 20,
+        }),
+        makeLineSeries('Precip %', probData, COLORS.cumulative, {
+          yAxisIndex: 1,
+          lineStyle: { color: COLORS.cumulative, width: 1.5, type: 'dotted' },
+          itemStyle: { color: COLORS.cumulative },
+        }),
+      ],
+    };
+  }, [hourly, isImperial, precipLabel, fmtDate]);
 
   return (
     <div className="hourly-snow-chart">
@@ -48,56 +105,7 @@ export function HourlySnowChart({ hourly, dayLabel }: Props) {
           {hasSnow ? `❄️ ${totalDisplay}` : 'No snow expected'}
         </span>
       </div>
-      <div style={{ width: '100%', height: 180 }}>
-        <ResponsiveContainer>
-          <BarChart data={data} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
-            <XAxis
-              dataKey="hour"
-              tick={{ fill: '#94a3b8', fontSize: 11 }}
-              axisLine={{ stroke: '#475569' }}
-              tickLine={false}
-            />
-            <YAxis
-              domain={[0, isImperial ? 1 : 2.5]}
-              ticks={isImperial ? [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0] : [0, 0.5, 1.0, 1.5, 2.0, 2.5]}
-              tick={{ fill: '#94a3b8', fontSize: 11 }}
-              axisLine={false}
-              tickLine={false}
-              width={36}
-              label={{
-                value: precipLabel,
-                angle: -90,
-                position: 'insideLeft',
-                fill: '#94a3b8',
-                fontSize: 10,
-              }}
-            />
-            <Tooltip
-              contentStyle={{
-                background: '#1e293b',
-                borderColor: '#475569',
-                borderRadius: 8,
-                color: '#f1f5f9',
-                fontSize: 13,
-              }}
-              formatter={(v: number, name: string) => {
-                if (name === 'Snow') return [`${v} ${precipLabel}`, 'Snow'];
-                return [`${v}%`, 'Precip %'];
-              }}
-            />
-            <ReferenceLine y={0} stroke="#475569" />
-            <Bar
-              dataKey="snow"
-              name="Snow"
-              fill="#38bdf8"
-              radius={[3, 3, 0, 0]}
-              maxBarSize={24}
-              isAnimationActive={false}
-            />
-          </BarChart>
-        </ResponsiveContainer>
-      </div>
+      <BaseChart option={option} height={200} group="resort-hourly-snow" />
     </div>
   );
 }

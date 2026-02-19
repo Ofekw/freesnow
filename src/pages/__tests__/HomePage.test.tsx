@@ -9,9 +9,11 @@ beforeEach(() => {
 });
 
 describe('HomePage', () => {
-  it('renders the hero section with title icon', () => {
+  it('renders the hero section with title', () => {
     renderWithProviders(<HomePage />);
-    expect(screen.getByText('❄️')).toBeInTheDocument();
+    expect(
+      screen.getByText(/free & open-source ski resort forecasts/i),
+    ).toBeInTheDocument();
   });
 
   it('renders the subtitle', () => {
@@ -62,7 +64,7 @@ describe('HomePage', () => {
 
   it('does not show favorites section when none favorited', () => {
     renderWithProviders(<HomePage />);
-    expect(screen.queryByText('★ Favourites')).not.toBeInTheDocument();
+    expect(screen.queryByText('Favourites')).not.toBeInTheDocument();
   });
 
   it('search has aria-label', () => {

@@ -1,7 +1,28 @@
 import { useState, useEffect, useCallback } from 'react';
-import type { Resort, ResortForecast, HistoricalSnowDay } from '@/types';
-import { fetchForecast, fetchHistorical } from '@/data/openmeteo';
+import type { Resort, ResortForecast, BandForecast, HistoricalSnowDay } from '@/types';
+import { fetchHistorical, fetchMultiModelForecast } from '@/data/openmeteo';
+import { fetchNWSSnowfall, nwsToSnowMap } from '@/data/nws';
+import { modelsForCountry, blendWithNWS } from '@/utils/modelAverage';
 import { useTimezone } from '@/context/TimezoneContext';
+
+/* ── NWS blending helper ─────────────────────────── */
+
+/**
+ * Apply NWS blending to a single BandForecast's daily snowfall sums.
+ * Mutates the band in place and returns it for convenience.
+ */
+function applyNWSBlend(band: BandForecast, nwsSnowMap: Map<string, number>): BandForecast {
+  if (nwsSnowMap.size === 0) return band;
+
+  const blended = blendWithNWS(band.daily, nwsSnowMap);
+  for (const day of band.daily) {
+    const blendedValue = blended.get(day.date);
+    if (blendedValue !== undefined) {
+      day.snowfallSum = blendedValue;
+    }
+  }
+  return band;
+}
 
 /* ── useForecast ─────────────────────────────────── */
 
@@ -23,11 +44,30 @@ export function useForecast(resort: Resort | undefined): UseForecastResult {
     setLoading(true);
     setError(null);
     try {
+      const models = modelsForCountry(resort.country);
+
+      // Fetch multi-model forecasts for all 3 bands in parallel
       const [base, mid, top] = await Promise.all([
-        fetchForecast(resort.lat, resort.lon, resort.elevation.base, 'base', 7, 0, tz),
-        fetchForecast(resort.lat, resort.lon, resort.elevation.mid, 'mid', 7, 0, tz),
-        fetchForecast(resort.lat, resort.lon, resort.elevation.top, 'top', 7, 0, tz),
+        fetchMultiModelForecast(resort.lat, resort.lon, resort.elevation.base, 'base', models, 7, 0, tz),
+        fetchMultiModelForecast(resort.lat, resort.lon, resort.elevation.mid, 'mid', models, 7, 0, tz),
+        fetchMultiModelForecast(resort.lat, resort.lon, resort.elevation.top, 'top', models, 7, 0, tz),
       ]);
+
+      // For US resorts, fetch NWS snowfall and blend (non-blocking)
+      if (resort.country === 'US') {
+        try {
+          const nwsDays = await fetchNWSSnowfall(resort.lat, resort.lon);
+          const nwsMap = nwsToSnowMap(nwsDays);
+          if (nwsMap.size > 0) {
+            applyNWSBlend(base, nwsMap);
+            applyNWSBlend(mid, nwsMap);
+            applyNWSBlend(top, nwsMap);
+          }
+        } catch {
+          // NWS is optional — proceed without blending
+        }
+      }
+
       setForecast({
         resort,
         fetchedAt: new Date().toISOString(),

@@ -38,14 +38,14 @@ describe('ResortCard', () => {
     renderWithProviders(
       <ResortCard resort={mockResort} isFavorite={true} onToggleFavorite={mock(() => {})} />,
     );
-    expect(screen.getByText('★')).toBeInTheDocument();
+    expect(screen.getByLabelText('Remove from favorites')).toBeInTheDocument();
   });
 
   it('shows empty star when not favorited', () => {
     renderWithProviders(
       <ResortCard resort={mockResort} isFavorite={false} onToggleFavorite={mock(() => {})} />,
     );
-    expect(screen.getByText('☆')).toBeInTheDocument();
+    expect(screen.getByLabelText('Add to favorites')).toBeInTheDocument();
   });
 
   it('calls onToggleFavorite when star is clicked', async () => {

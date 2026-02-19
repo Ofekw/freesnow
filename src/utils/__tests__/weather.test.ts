@@ -12,29 +12,29 @@ import {
 describe('weatherDescription', () => {
   it('returns label and icon for known WMO code', () => {
     const result = weatherDescription(0);
-    expect(result).toEqual({ label: 'Clear sky', icon: '☀️' });
+    expect(result).toEqual({ label: 'Clear sky', icon: 'sun' });
   });
 
   it('returns Heavy snow for code 75', () => {
-    expect(weatherDescription(75)).toEqual({ label: 'Heavy snow', icon: '❄️' });
+    expect(weatherDescription(75)).toEqual({ label: 'Heavy snow', icon: 'snowflake' });
   });
 
   it('returns Thunderstorm for code 95', () => {
-    expect(weatherDescription(95)).toEqual({ label: 'Thunderstorm', icon: '⛈️' });
+    expect(weatherDescription(95)).toEqual({ label: 'Thunderstorm', icon: 'cloud-lightning' });
   });
 
   it('returns fallback for unknown WMO code', () => {
     const result = weatherDescription(999);
     expect(result.label).toBe('Code 999');
-    expect(result.icon).toBe('❓');
+    expect(result.icon).toBe('help');
   });
 
   it('returns Fog for code 45', () => {
-    expect(weatherDescription(45)).toEqual({ label: 'Fog', icon: '🌫️' });
+    expect(weatherDescription(45)).toEqual({ label: 'Fog', icon: 'cloud-fog' });
   });
 
   it('returns Snow for code 73', () => {
-    expect(weatherDescription(73)).toEqual({ label: 'Snow', icon: '🌨️' });
+    expect(weatherDescription(73)).toEqual({ label: 'Snow', icon: 'cloud-snow' });
   });
 });
 

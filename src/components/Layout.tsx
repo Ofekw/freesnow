@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { Outlet } from 'react-router-dom';
+import { Globe, Bell, BellOff, ChevronUp } from 'lucide-react';
 import { useUnits } from '@/context/UnitsContext';
 import { useTimezone, TZ_OPTIONS, getUtcOffset } from '@/context/TimezoneContext';
 import { useSnowAlerts } from '@/hooks/useSnowAlerts';
@@ -8,11 +9,21 @@ import './Layout.css';
 export function Layout() {
   const { units, toggle, temp, elev } = useUnits();
   const { tzRaw, tzLabel, setTz } = useTimezone();
-  const { statusIcon, statusTitle, toggleAlerts, isSupported, enabled, permission } = useSnowAlerts();
+  const { statusTitle, toggleAlerts, isSupported, enabled, permission } = useSnowAlerts();
   const [tzOpen, setTzOpen] = useState(false);
   const [tzSearch, setTzSearch] = useState('');
+  const [showScrollTop, setShowScrollTop] = useState(false);
   const tzRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
+
+  // Show scroll-to-top button when scrolled past 400px
+  useEffect(() => {
+    function handleScroll() {
+      setShowScrollTop(window.scrollY > 400);
+    }
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   // Compute UTC offsets once (they only change with DST, fine to recompute on render)
   const tzWithOffsets = useMemo(
@@ -74,7 +85,9 @@ export function Layout() {
           title={statusTitle}
           disabled={!isSupported}
         >
-          {statusIcon}
+          {permission === 'denied' || (permission === 'granted' && !enabled)
+            ? <BellOff size={16} />
+            : <Bell size={16} />}
         </button>
 
         <div className="tz-picker" ref={tzRef}>
@@ -84,7 +97,7 @@ export function Layout() {
             aria-label="Change timezone"
             title="Change timezone"
           >
-            🌐 {tzLabel}
+            <Globe size={14} /> {tzLabel}
           </button>
           {tzOpen && (
             <div className="tz-picker__dropdown">
@@ -127,22 +140,19 @@ export function Layout() {
         <div className="container footer__inner">
           <p>
             Weather data by{' '}
-            <a
-              href="https://open-meteo.com/"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Open-Meteo
-            </a>{' '}
-            (CC BY 4.0). FreeSnow is{' '}
-            <a
-              href="https://github.com/Ofekw/freesnow"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              open-source
-            </a>{' '}
-            &amp; non-commercial.
+            <a href="https://open-meteo.com/" target="_blank" rel="noopener noreferrer">Open-Meteo</a>
+            {' '}(CC BY 4.0) — models:{' '}
+            <a href="https://www.ncei.noaa.gov/products/weather-climate-models/global-forecast" target="_blank" rel="noopener noreferrer">GFS</a>,{' '}
+            <a href="https://www.ecmwf.int/en/forecasts/datasets/open-data" target="_blank" rel="noopener noreferrer">ECMWF</a>,{' '}
+            <a href="https://rapidrefresh.noaa.gov/hrrr/" target="_blank" rel="noopener noreferrer">HRRR</a>,{' '}
+            <a href="https://weather.gc.ca/grib/grib2_glb_25km_e.html" target="_blank" rel="noopener noreferrer">GEM</a>.
+            {' '}US snowfall cross-referenced with{' '}
+            <a href="https://www.weather.gov/documentation/services-web-api" target="_blank" rel="noopener noreferrer">NWS Weather.gov</a>.
+          </p>
+          <p>
+            Free OpenSnow is{' '}
+            <a href="https://github.com/Ofekw/freesnow" target="_blank" rel="noopener noreferrer">open-source</a>
+            {' '}&amp; non-commercial.
           </p>
           <a
             className="footer__feedback"
@@ -154,6 +164,16 @@ export function Layout() {
           </a>
         </div>
       </footer>
+
+      {/* Scroll to top */}
+      <button
+        className={`scroll-top ${showScrollTop ? 'scroll-top--visible' : ''}`}
+        onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+        aria-label="Scroll to top"
+        title="Scroll to top"
+      >
+        <ChevronUp size={20} />
+      </button>
     </div>
   );
 }

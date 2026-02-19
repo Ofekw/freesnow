@@ -1,0 +1,208 @@
+/* ── ConditionsSummary ── 3-elevation comparison table ──────── */
+
+.conditions-summary {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  animation: fadeInUp 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.conditions-summary__table {
+  display: grid;
+  grid-template-columns: minmax(80px, auto) repeat(3, 1fr);
+  width: 100%;
+}
+
+/* Rows */
+.conditions-summary__row {
+  display: contents;
+}
+
+.conditions-summary__row > .conditions-summary__cell {
+  padding: var(--space-sm) var(--space-md);
+  border-bottom: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+}
+
+/* Last row: no bottom border */
+.conditions-summary__row:last-child > .conditions-summary__cell {
+  border-bottom: none;
+}
+
+/* Header row */
+.conditions-summary__row--header > .conditions-summary__cell {
+  background: var(--color-surface-raised);
+  font-weight: 700;
+  font-size: 0.8rem;
+  padding: var(--space-sm) var(--space-md);
+}
+
+/* Snow highlight row */
+.conditions-summary__row--highlight > .conditions-summary__cell {
+  background: rgba(56, 189, 248, 0.04);
+}
+
+/* Label column */
+.conditions-summary__cell--label {
+  justify-content: flex-start !important;
+  gap: 4px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  text-align: left;
+  white-space: nowrap;
+  border-right: 1px solid var(--color-border);
+}
+
+.conditions-summary__cell--label .label-icon {
+  color: var(--color-accent);
+  flex-shrink: 0;
+}
+
+/* Band column header */
+.conditions-summary__cell--band {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+}
+
+.conditions-summary__band-name {
+  font-weight: 700;
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.conditions-summary__band-elev {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  color: var(--color-text-muted);
+}
+
+/* Cell content styles */
+.conditions-summary__cell {
+  font-size: 0.82rem;
+  color: var(--color-text);
+  text-align: center;
+}
+
+.conditions-summary__weather {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.conditions-summary__icon {
+  font-size: 1.2rem;
+}
+
+.conditions-summary__weather-label {
+  font-size: 0.68rem;
+  color: var(--color-text-muted);
+  line-height: 1.2;
+}
+
+.conditions-summary__temp {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.conditions-summary__temp-high {
+  color: var(--chart-temp-high);
+}
+
+.conditions-summary__temp-sep {
+  color: var(--color-text-muted);
+  font-weight: 400;
+}
+
+.conditions-summary__temp-low {
+  color: var(--chart-temp-low);
+}
+
+.conditions-summary__snow {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 0.88rem;
+  color: var(--color-text-muted);
+}
+
+.conditions-summary__snow.has-snow {
+  color: var(--chart-snow);
+  text-shadow: 0 0 8px rgba(56, 189, 248, 0.3);
+}
+
+.conditions-summary__rain {
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  color: var(--chart-rain);
+}
+
+.conditions-summary__wind {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+}
+
+.conditions-summary__gusts {
+  font-size: 0.65rem;
+  color: var(--color-text-muted);
+}
+
+.conditions-summary__precip-prob {
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.conditions-summary__freezing {
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--chart-freezing);
+}
+
+.conditions-summary__snowpack {
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--chart-snow);
+}
+
+/* Full-width cell (freezing level spans 3 columns) */
+.conditions-summary__cell--full {
+  grid-column: span 3;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .conditions-summary__table {
+    grid-template-columns: minmax(64px, auto) repeat(3, 1fr);
+  }
+
+  .conditions-summary__row > .conditions-summary__cell {
+    padding: var(--space-xs) var(--space-sm);
+    min-height: 36px;
+  }
+
+  .conditions-summary__cell--label {
+    font-size: 0.7rem;
+  }
+
+  .conditions-summary__band-name {
+    font-size: 0.72rem;
+  }
+}

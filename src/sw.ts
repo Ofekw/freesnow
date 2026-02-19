@@ -30,6 +30,11 @@ registerRoute(
   new StaleWhileRevalidate({ cacheName: 'open-meteo-cache' }),
 );
 
+registerRoute(
+  ({ url }) => url.origin === 'https://api.weather.gov',
+  new StaleWhileRevalidate({ cacheName: 'nws-cache' }),
+);
+
 function formatDateLabel(dateIso: string, timezone: string): string {
   try {
     return new Intl.DateTimeFormat('en-US', {

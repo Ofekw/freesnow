@@ -1,58 +1,25 @@
-import {
-  ResponsiveContainer,
-  ComposedChart,
-  Bar,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-} from 'recharts';
+import { useMemo } from 'react';
+import type { EChartsOption } from 'echarts';
 import type { HourlyMetrics } from '@/types';
 import { cmToIn, getRainDotRating, MM_PER_INCH, MM_PER_CM } from '@/utils/weather';
 import { useUnits } from '@/context/UnitsContext';
 import { useTimezone } from '@/context/TimezoneContext';
+import { BaseChart } from './BaseChart';
+import {
+  COLORS,
+  makeTooltip,
+  makeLegend,
+  makeGrid,
+  makeCategoryAxis,
+  makeValueAxis,
+  makeBarSeries,
+  makeLineSeries,
+  makeDashedLineSeries,
+  makeDataZoom,
+} from './echarts-theme';
 
 interface Props {
   hourly: HourlyMetrics[];
-}
-
-// Custom shape to render rain dots inside snow bars
-interface RainDotsShapeProps {
-  x?: number;
-  y?: number;
-  width?: number;
-  height?: number;
-  payload?: { rainDots?: number };
-}
-
-function RainDots(props: RainDotsShapeProps) {
-  const { x = 0, y = 0, width = 0, height = 0, payload } = props;
-  const rainDots = payload?.rainDots ?? 0;
-  if (!rainDots || rainDots === 0) return <g />;
-  
-  const dotRadius = Math.min(width / 4, 2.5);
-  const dotSpacing = dotRadius * 2.5;
-  const totalHeight = rainDots * dotSpacing - dotSpacing / 2;
-  const startY = y + height - totalHeight - dotRadius;
-  
-  const dots = [];
-  for (let i = 0; i < rainDots; i++) {
-    dots.push(
-      <circle
-        key={i}
-        cx={x + width / 2}
-        cy={startY + i * dotSpacing}
-        r={dotRadius}
-        fill="#6366f1"
-        stroke="#1e293b"
-        strokeWidth={1}
-      />
-    );
-  }
-  
-  return <g>{dots}</g>;
 }
 
 export function HourlyDetailChart({ hourly }: Props) {
@@ -60,75 +27,103 @@ export function HourlyDetailChart({ hourly }: Props) {
   const { fmtDate } = useTimezone();
   const isImperial = tempUnit === 'F';
 
-  const data = hourly.map((h) => ({
-    time: fmtDate(h.time, { weekday: 'short', hour: 'numeric' }),
-    snow: isImperial ? +cmToIn(h.snowfall).toFixed(2) : +h.snowfall.toFixed(1),
-    rain: isImperial ? +(h.rain / MM_PER_INCH).toFixed(2) : +h.rain.toFixed(1),
-    // Scale rain by 1/6 for hourly as specified in requirements
-    rainDots: getRainDotRating((isImperial ? h.rain / MM_PER_INCH : h.rain / MM_PER_CM) / 6),
-    temp: isImperial ? Math.round(h.temperature * 9 / 5 + 32) : Math.round(h.temperature),
-    feels: isImperial ? Math.round(h.apparentTemperature * 9 / 5 + 32) : Math.round(h.apparentTemperature),
-    wind: isImperial ? Math.round(h.windSpeed * 0.621371) : Math.round(h.windSpeed),
-    gusts: isImperial ? Math.round(h.windGusts * 0.621371) : Math.round(h.windGusts),
-  }));
+  const option = useMemo<EChartsOption>(() => {
+    const times = hourly.map((h) =>
+      fmtDate(h.time, { weekday: 'short', hour: 'numeric' }),
+    );
+    const snowData = hourly.map((h) =>
+      isImperial ? +cmToIn(h.snowfall).toFixed(2) : +h.snowfall.toFixed(1),
+    );
+    // Scale rain by 1/6 for hourly as per requirements
+    const rainDotsData = hourly.map((h) =>
+      getRainDotRating((isImperial ? h.rain / MM_PER_INCH : h.rain / MM_PER_CM) / 6),
+    );
+    const tempData = hourly.map((h) =>
+      isImperial ? Math.round(h.temperature * 9 / 5 + 32) : Math.round(h.temperature),
+    );
+    const feelsData = hourly.map((h) =>
+      isImperial ? Math.round(h.apparentTemperature * 9 / 5 + 32) : Math.round(h.apparentTemperature),
+    );
+    const windData = hourly.map((h) =>
+      isImperial ? Math.round(h.windSpeed * 0.621371) : Math.round(h.windSpeed),
+    );
+    const gustsData = hourly.map((h) =>
+      isImperial ? Math.round(h.windGusts * 0.621371) : Math.round(h.windGusts),
+    );
 
-  const precipLabel = isImperial ? 'in' : snowUnit;
-  const tempLabel = `°${tempUnit}`;
+    const precipLabel = isImperial ? 'in' : snowUnit;
+    const tempLabel = `°${tempUnit}`;
+    const windLabel = isImperial ? 'mph' : 'km/h';
 
-  return (
-    <div style={{ width: '100%', height: 300 }}>
-      <ResponsiveContainer>
-        <ComposedChart data={data} margin={{ top: 8, right: 12, left: 0, bottom: 0 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-          <XAxis
-            dataKey="time"
-            tick={{ fill: '#94a3b8', fontSize: 11 }}
-            interval="preserveStartEnd"
-            axisLine={{ stroke: '#475569' }}
-          />
-          <YAxis
-            yAxisId="precip"
-            orientation="left"
-            domain={[0, isImperial ? 1 : 2.5]}
-            ticks={isImperial ? [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0] : [0, 0.5, 1.0, 1.5, 2.0, 2.5]}
-            tick={{ fill: '#94a3b8', fontSize: 11 }}
-            axisLine={{ stroke: '#475569' }}
-          />
-          <YAxis
-            yAxisId="temp"
-            orientation="right"
-            tick={{ fill: '#94a3b8', fontSize: 11 }}
-            axisLine={{ stroke: '#475569' }}
-          />
-          <Tooltip
-            contentStyle={{
-              background: '#1e293b',
-              borderColor: '#475569',
-              borderRadius: 8,
-              color: '#f1f5f9',
-              fontSize: 13,
-            }}
-            formatter={(value: number, name: string, props: any) => {
-              if (name.includes('Rain')) {
-                if (name.includes('dots')) {
-                  const rainVal = props?.payload?.rain;
-                  if (typeof rainVal === 'number') {
-                    return [`${rainVal} ${precipLabel}`, 'Rain'];
-                  }
-                  const dotCount = typeof value === 'number' ? Math.round(value) : 0;
-                  return [`${dotCount} dot${dotCount !== 1 ? 's' : ''}`, name];
-                }
-              }
-              return [value, name];
-            }}
-          />
-          <Legend wrapperStyle={{ fontSize: 12 }} />
-          <Bar yAxisId="precip" dataKey="snow" name={`Snow (${precipLabel})`} fill="#38bdf8" radius={[3, 3, 0, 0]} isAnimationActive={false} />
-          <Bar yAxisId="precip" dataKey="rainDots" name="Rain (0-3 rating)" fill="#6366f1" shape={RainDots} isAnimationActive={false} />
-          <Line yAxisId="precip" type="monotone" dataKey="temp" name={`Temp ${tempLabel}`} stroke="#f59e0b" strokeWidth={2} dot={false} isAnimationActive={false} />
-          <Line yAxisId="temp" type="monotone" dataKey="feels" name={`Feels ${tempLabel}`} stroke="#f59e0b" strokeWidth={1} strokeDasharray="4 3" dot={false} isAnimationActive={false} />
-        </ComposedChart>
-      </ResponsiveContainer>
-    </div>
-  );
+    return {
+      tooltip: makeTooltip(),
+      legend: makeLegend(
+        [`Snow (${precipLabel})`, `Rain (0-3 rating)`, `Temp ${tempLabel}`, `Feels ${tempLabel}`, `Wind (${windLabel})`, `Gusts (${windLabel})`],
+        { bottom: 24 },
+      ),
+      grid: makeGrid({ bottom: 84, right: 56 }),
+      dataZoom: makeDataZoom(0),
+      xAxis: [makeCategoryAxis(times)],
+      yAxis: [
+        makeValueAxis({
+          name: precipLabel,
+          nameLocation: 'middle',
+          nameGap: 36,
+          min: 0,
+          max: isImperial ? 1 : 2.5,
+          interval: isImperial ? 0.2 : 0.5,
+        }),
+        makeValueAxis({
+          name: tempLabel,
+          nameLocation: 'middle',
+          nameGap: 36,
+          position: 'right',
+          splitLine: { show: false },
+        }),
+      ],
+      series: [
+        makeBarSeries(`Snow (${precipLabel})`, snowData, COLORS.snow, { yAxisIndex: 0 }),
+        // Rain dots as pictorial bar with custom rendering
+        {
+          name: `Rain (0-3 rating)`,
+          type: 'pictorialBar',
+          data: rainDotsData,
+          yAxisIndex: 0,
+          symbol: 'circle',
+          symbolSize: [5, 5],
+          symbolRepeat: true,
+          symbolMargin: 1.5,
+          symbolClip: true,
+          symbolPosition: 'start',
+          itemStyle: {
+            color: COLORS.rain,
+          },
+          emphasis: {
+            itemStyle: {
+              color: COLORS.rain,
+              opacity: 1,
+            },
+          },
+          tooltip: {
+            formatter: (params: any) => {
+              const dotCount = params.value || 0;
+              return `${params.name}<br/>${params.seriesName}: ${dotCount} dot${dotCount !== 1 ? 's' : ''}`;
+            },
+          },
+          z: 10, // Render on top of snow bars
+        },
+        makeLineSeries(`Temp ${tempLabel}`, tempData, COLORS.tempHigh, { yAxisIndex: 1 }),
+        makeDashedLineSeries(`Feels ${tempLabel}`, feelsData, COLORS.tempHigh, { yAxisIndex: 1 }),
+        makeLineSeries(`Wind (${windLabel})`, windData, COLORS.wind, {
+          yAxisIndex: 1,
+          lineStyle: { color: COLORS.wind, width: 1.5 },
+        }),
+        makeDashedLineSeries(`Gusts (${windLabel})`, gustsData, COLORS.gusts, {
+          yAxisIndex: 1,
+        }),
+      ],
+    };
+  }, [hourly, isImperial, tempUnit, snowUnit, fmtDate]);
+
+  return <BaseChart option={option} height={340} group="resort-hourly" />;
 }

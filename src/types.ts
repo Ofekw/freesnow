@@ -61,6 +61,8 @@ export interface HourlyMetrics {
   windGusts: number;
   /** m above sea level */
   freezingLevelHeight: number;
+  /** m snow depth (from model, for validation) */
+  snowDepth?: number;
 }
 
 /* ── Daily weather row ──────────────────────────── */

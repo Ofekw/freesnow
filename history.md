@@ -1,4 +1,4 @@
-# FreeSnow — Implementation History
+# Free OpenSnow — Implementation History
 
 A chronological log of all implementation work, decisions, and changes made during the build of FreeSnow.
 
@@ -343,8 +343,223 @@ src/
 
 - **Bun PATH**: Must add `$env:PATH = "$env:USERPROFILE\.bun\bin;$env:PATH"` each PowerShell session
 - **Open-Meteo archive lag**: ~5 days behind. Use forecast endpoint's `past_days` for recent history.
+- **Open-Meteo elevation limitation**: The `elevation` parameter only adjusts temperature via lapse rate. Precipitation data comes from the same grid cell (~11km resolution) regardless of elevation. Our snowRecalc layer fixes this.
 - **Timezone handling**: All API calls pass the user's selected IANA timezone. All display formatting uses `Intl.DateTimeFormat` with that timezone.
 - **PWA caching**: StaleWhileRevalidate via Workbox — serves cached response immediately, refreshes in background.
+
+---
+
+## Phase 13: Snowfall Recalculation & Data Accuracy Fix
+
+### What changed
+- Created `src/utils/snowRecalc.ts` — temperature-dependent snow-liquid ratio (SLR) recalculation that replaces Open-Meteo's fixed ~7:1 ratio with realistic mountain ratios (10:1 to 20:1 depending on temperature).
+- Modified `src/data/openmeteo.ts` to apply recalculation at the data layer: hourly snowfall/rain are recomputed from total precipitation using freezing level + station elevation + temperature, then daily sums are recomputed from corrected hourly data.
+- Fixed `src/pages/ResortPage.tsx` — Recent Snowfall section now uses the user's selected elevation band instead of always hardcoding 'mid'.
+- Added `src/utils/__tests__/snowRecalc.test.ts` — 15 unit tests covering SLR, recalculation at various temperatures, and a Crystal Mountain validation scenario.
+
+### Why it changed
+Three interrelated data accuracy issues were identified:
+1. **Underestimated snowfall**: Open-Meteo uses a fixed ~7:1 SLR, but real mountain snow at -7°C to -13°C has 12:1–20:1 ratios. Crystal Mountain mid showed 1.4cm when competitors showed 4–5cm.
+2. **Base showing more snow than mid**: The `elevation` parameter only adjusts temperature, not precipitation. The model's rain/snow split at the grid cell level could produce more snow at base than mid due to temperature interpolation artifacts.
+3. **Rain at sub-freezing temperatures**: The API's rain/snow split is computed at grid-cell elevation, not station elevation. Our recalculation uses the station's actual elevation vs freezing level to correctly categorize precipitation.
+
+### How the recalculation works
+- For each hourly data point, precipitation is re-split into snow/rain based on:
+  - If station is >100m above freezing level → all snow
+  - If temp ≤ 0°C → all snow  
+  - If 0–2°C → linear mix
+  - If > 2°C → all rain
+- Snow depth is computed as `precipitation_mm × SLR` where SLR varies by temperature:
+  - 0 to -2°C: 1.0 (10:1)
+  - -2 to -5°C: 1.2 (12:1)
+  - -5 to -10°C: 1.5 (15:1)
+  - -10 to -15°C: 1.8 (18:1)
+  - Below -15°C: 2.0 (20:1)
+- Daily sums are recomputed from corrected hourly values
+
+### Validation
+For Crystal Mountain mid (1800m), Feb 18 2026:
+- **Before**: 1.4cm (Open-Meteo raw)
+- **After**: ~4.0cm (recalculated)
+- **Competitors**: snow-forecast.com ~4cm, OpenSnow ~5cm
+
+Higher elevations now correctly show ≥ snowfall of lower elevations because:
+- Same precipitation amount × higher SLR at colder temperature = more snow
+
+### Key files affected
+- `src/utils/snowRecalc.ts` (new)
+- `src/utils/__tests__/snowRecalc.test.ts` (new)
+- `src/data/openmeteo.ts` (mapHourly/mapDaily now apply recalculation)
+- `src/pages/ResortPage.tsx` (Recent Snow uses selected band)
+
+### Follow-up notes
+- The historical archive endpoint (`fetchHistorical`) still uses raw API snowfall since it doesn't return hourly data. A future improvement could add temperature-based correction for historical data too.
+- Alternative free APIs (Weather.gov, multi-model averaging) were investigated but not implemented — the recalculation approach provides accurate results without additional API calls.
+
+## Phase 13b: Rain Unit Fix in Metric Charts
+
+### What changed
+- Fixed rain unit mismatch in `DailyForecastChart` and `HourlyDetailChart`: rain values (stored in mm from the API) were displayed raw but labeled as "cm" in metric mode.
+- Rain is now converted from mm → cm (`/ 10`) in metric mode to match snow on the shared precipitation Y-axis.
+- Imperial mode was already correct (mm → in via `/ 25.4`).
+
+### Why it changed
+- Rain and snow share a Y-axis labeled "(cm)" in metric mode, but rain data was plotted in mm. This made rain values appear ~10x larger than they should on the cm scale (e.g., 0.65mm displayed as "0.7 cm" instead of "0.065 cm").
+- Discovered while validating snowfall recalculation against live API data for Crystal Mountain WA.
+
+### Key files affected
+- `src/components/charts/DailyForecastChart.tsx`
+- `src/components/charts/HourlyDetailChart.tsx`
+
+---
+
+## Phase 14: UI/UX Overhaul — Phase 1 (Design System & ECharts Migration)
+
+### What changed
+- **Chart library migration**: Replaced Recharts with Apache ECharts 6 + echarts-for-react 3.0.6. All 7 chart components fully rewritten.
+- **Design tokens overhaul**: New deeper navy Grafana-inspired palette (`--color-bg: #0b1120`, `--color-surface: #141b2d`, `--color-surface-raised: #1e2942`), semantic chart color tokens (`--chart-snow`, `--chart-rain`, `--chart-temp-high`, etc.), glow shadows.
+- **Typography**: Added DM Sans (display/UI) and Space Mono (data/mono) via Google Fonts.
+- **ECharts theme system**: Created centralized `echarts-theme.ts` with registered 'freesnow' theme and builder helpers (`makeTooltip`, `makeLegend`, `makeGrid`, `makeCategoryAxis`, `makeValueAxis`, `makeBarSeries`, `makeLineSeries`, `makeDashedLineSeries`, `makeDataZoom`).
+- **BaseChart wrapper**: New `BaseChart.tsx` thin wrapper applying theme, responsive sizing, optional cross-chart group sync.
+- **Chart feature improvements**:
+  - All charts now have toggleable legends (ECharts native)
+  - DailyForecastChart & HourlyDetailChart: dual Y-axes, feels-like dashed lines
+  - HourlyDetailChart: wind speed + gusts now rendered (previously computed but hidden)
+  - HourlySnowChart: precipitation probability now rendered as dotted line
+  - RecentSnowChart: proper legend + dataZoom slider for panning
+  - FreezingLevelChart: gradient fill + optional resort elevation markLine reference
+  - UVIndexChart: color-coded severity legend, value labels on bars, timezone-aware date formatting
+  - SnowHistoryChart: **bug fix** — now respects units context (was hardcoded to imperial)
+
+### Why it changed
+- UI/UX overhaul initiative for powder hunters — needed interactive Grafana-style charts with toggleable legends, uniform increments, rich tooltips, and dataZoom for exploration.
+- Recharts lacked native legend toggling, dataZoom, cross-chart sync, and built-in dark theme support.
+- Typography and color palette refresh to establish unique brand identity distinct from competitors (OpenSnow, snow-forecast.com).
+
+### Key files affected
+- `package.json` — echarts deps added, recharts removed
+- `index.html` — Google Fonts links, updated title/theme-color
+- `src/styles/index.css` — full design token overhaul
+- `src/components/charts/echarts-theme.ts` — NEW: theme + helpers
+- `src/components/charts/BaseChart.tsx` — NEW: wrapper component
+- `src/components/charts/DailyForecastChart.tsx` — rewritten
+- `src/components/charts/HourlyDetailChart.tsx` — rewritten
+- `src/components/charts/HourlySnowChart.tsx` — rewritten
+- `src/components/charts/RecentSnowChart.tsx` — rewritten
+- `src/components/charts/FreezingLevelChart.tsx` — rewritten
+- `src/components/charts/UVIndexChart.tsx` — rewritten
+- `src/components/charts/SnowHistoryChart.tsx` — rewritten
+- `src/pages/ResortPage.tsx` — added resortElevation prop to FreezingLevelChart
+
+---
+
+## Phase 15: UI/UX Overhaul — Phase 2 (Snow Timeline, Conditions Summary, Resort Page Restructure)
+
+### What changed
+- **SnowTimeline component** — OpenSnow-inspired compact past 7 + future 7 day snowfall bar chart with "today" divider. Shows at-a-glance snow trend with totals for each period. Uses CSS bars with gradient fill (future) vs muted (past). Placed in hero position on resort page.
+- **ConditionsSummary component** — snow-forecast.com-inspired 3-elevation comparison table for the selected day. Shows weather, temperature (high/low), snow, rain, wind (+ gusts), precipitation probability, and average freezing level across Base/Mid/Top bands. Uses CSS grid layout with responsive design.
+- **ResortPage restructure** — New information hierarchy:
+  1. Header + stats (unchanged)
+  2. **Snow Timeline** (hero position — first data the user sees)
+  3. Band toggle + refresh
+  4. **Conditions Summary** (all-elevation at-a-glance, with "All Elevations" badge)
+  5. 7-Day Snow section (day cards + DailyForecastChart + HourlySnowChart)
+  6. Hourly Detail chart
+  7. UV + Freezing Level grid
+  8. Recent Snowfall
+- **CSS polish** — Section header with badge component, stats row uses `font-mono` for data values, updated border/radius tokens.
+- **20 new tests** — 10 for SnowTimeline (rendering, data display, edge cases, accessibility), 10 for ConditionsSummary (table structure, elevation bands, weather data display, unit formatting).
+
+### Why it changed
+- Powder hunters need an instant visual read on the snow trend — the SnowTimeline gives this at a glance before any scrolling.
+- Comparing conditions across elevations (snow-forecast.com style) helps users decide which lifts to target.
+- Previous layout showed only the selected elevation band's conditions; now the ConditionsSummary shows all three bands simultaneously.
+
+### Key files affected
+- `src/components/SnowTimeline.tsx` — NEW
+- `src/components/SnowTimeline.css` — NEW
+- `src/components/ConditionsSummary.tsx` — NEW
+- `src/components/ConditionsSummary.css` — NEW
+- `src/components/__tests__/SnowTimeline.test.tsx` — NEW (10 tests)
+- `src/components/__tests__/ConditionsSummary.test.tsx` — NEW (10 tests)
+- `src/pages/ResortPage.tsx` — restructured layout + new component integration
+- `src/pages/ResortPage.css` — section header badge, stat font-mono, border updates
+
+---
+
+## Phase 16: UI/UX Overhaul — Phase 4 (Polish + Animations)
+
+### What changed
+- **Global animation system** — Added 6 `@keyframes` to `index.css`: `fadeInUp`, `fadeIn`, `slideInLeft`, `shimmer`, `pulseGlow`, `snowPulse`. Utility classes `.animate-fade-in-up`, `.animate-fade-in`, `.stagger-children` (10-step delay). Smooth scroll via `html { scroll-behavior: smooth }`. Full `prefers-reduced-motion: reduce` media query disables all animations/transitions for accessibility.
+- **Skeleton loading states** — Replaced plain "Loading forecast…" text with shimmer skeleton placeholders (`.skeleton`, `.skeleton--text`, `.skeleton--chart`, `.skeleton--card`). Applied to FavoriteCard loading state (3-column skeleton grid) and ResortPage initial loader (chart + text skeletons).
+- **Cross-chart tooltip sync** — BaseChart now calls `echarts.connect(group)` when a group prop is provided, enabling synchronized tooltips and dataZoom across charts sharing the same group ID. HourlyDetailChart, HourlySnowChart, and FreezingLevelChart each already pass group IDs.
+- **Section title accent** — `.section-title` now has a 3px left border accent (`border-left: 3px solid var(--color-accent)`) for visual hierarchy.
+- **Day card animations** — Day cards use `fadeInUp` entrance with stagger delays via `.stagger-children`. Added `:active` press state (`scale(0.97)`). Enhanced selected state with stronger box-shadow and inset glow.
+- **Card hover polish** — ResortCard and FavoriteCard hover states now include subtle accent border glow (`border-color: rgba(56, 189, 248, 0.15/0.2)`) and enhanced shadow. FavoriteCard snow values get `snowPulse` animation for subtle text glow.
+- **HomePage polish** — Search input gets cyan focus ring + glow shadow. Hero section, region sections animate in with `fadeInUp`. Region titles get left accent border. Favorites section gets ambient glow on hover.
+- **Scroll-to-top button** — New floating button (bottom-right) appears when scrolled past 400px. Pill shape, accent hover, smooth reveal animation. Responsive sizing on mobile.
+- **FAB group polish** — FABs get enhanced hover shadow (`box-shadow: 0 4px 16px rgba(56, 189, 248, 0.25)`). Favorite star on ResortPage gets `pulseGlow` when active.
+- **ElevationToggle polish** — Active state gets inset glow (`box-shadow: inset 0 0 12px rgba(56, 189, 248, 0.15)`).
+- **SnowTimeline + ConditionsSummary** — Both components get `fadeInUp` entrance animation.
+- **Focus visible** — Global `:focus-visible` ring (`2px solid var(--color-accent), offset 2px`) for keyboard accessibility.
+- **Bug fix** — Fixed typo `"reso  rt-page__chart-block"` → `"resort-page__chart-block"` in ResortPage.tsx.
+
+### Why it changed
+- Animations provide visual feedback, guide attention to new data, and make the UI feel more responsive/alive.
+- Skeleton loading states are a modern UX pattern that reduces perceived wait time vs. plain text spinners.
+- Cross-chart sync lets users correlate data across multiple hourly charts simultaneously.
+- Accessibility requirements demand motion reduction support and visible focus states.
+
+### Key files affected
+- `src/styles/index.css` — Global animations, skeletons, focus, reduced motion
+- `src/pages/ResortPage.tsx` — Skeleton loader, animation classes, stagger, typo fix
+- `src/pages/ResortPage.css` — Section accent, day card animations, stats hover, skeleton section
+- `src/pages/HomePage.css` — Search glow, hero animation, region title accent, favorites hover
+- `src/components/FavoriteCard.tsx` — Skeleton loading state
+- `src/components/FavoriteCard.css` — Skeleton grid, snow pulse, card hover glow
+- `src/components/ResortCard.css` — Card entrance animation, hover border glow
+- `src/components/Layout.tsx` — Scroll-to-top button (state + JSX)
+- `src/components/Layout.css` — Scroll-to-top styles, FAB hover shadow
+- `src/components/ElevationToggle.css` — Active inset glow
+- `src/components/SnowTimeline.css` — Entrance animation
+- `src/components/ConditionsSummary.css` — Entrance animation
+- `src/components/charts/BaseChart.tsx` — `echarts.connect()` for cross-chart sync
+
+## Snow Data Accuracy Improvement — Multi-Model, SLR, NWS, Snow Depth
+
+### What changed
+- **Phase A: Multi-model averaging** — The primary forecast now fetches 3 weather models in parallel (GFS, ECMWF IFS, and HRRR for US / GEM for Canada) and averages their raw output before applying the SLR recalculation. Precipitation uses **median** (robust to outlier model spikes), temperature/wind/humidity use **mean**, weather codes use **mode**, and wind direction uses vector averaging. Different time ranges are handled via union (HRRR 48h contributes only to short-range, GFS/ECMWF cover full 7 days). Falls back to single `best_match` if all model fetches fail.
+- **Phase B: Improved SLR** — `snowLiquidRatio()` now accepts optional `relativeHumidity` and `windSpeedKmh` parameters. High humidity (≥80%) boosts SLR by 10-15% (fluffier dendritic crystals), low humidity (<50%) reduces by 10% (denser granular snow). Strong wind (≥30 km/h) reduces by 10-20% (compaction + sublimation). `recalcHourly` passes humidity and wind from the API data.
+- **Phase C: NWS cross-reference** — For US resorts, `fetchNWSSnowfall()` queries the NWS Weather.gov API (free, no key, CORS) via a 2-step lookup (points → gridpoint forecastGridData → snowfallAmount). NWS forecaster-adjusted snowfall is blended with multi-model output at 30% NWS / 70% model weight. NWS failures are silently ignored (optional enhancement).
+- **Phase D: Snow depth** — Added `snow_depth` to hourly API variables. `HourlyMetrics` now includes optional `snowDepth` field. Model averaging handles `snow_depth` arrays when present.
+- **Service worker** — Added `StaleWhileRevalidate` caching for `api.weather.gov` origin.
+
+### Why it changed
+The plan identified four independent accuracy improvements, all achievable with free APIs and no backend:
+1. Multi-model averaging is the single highest-impact technique for forecast accuracy (15-30% RMSE reduction).
+2. Humidity and wind are already fetched but weren't used in SLR — adding them corrects the fluffiness/compaction mismatch.
+3. NWS forecasters manually adjust QPF and snow ratios — their signal adds human intelligence to the pipeline.
+4. Snow depth provides validation data and future UI opportunities.
+
+### Key files affected
+- `src/utils/modelAverage.ts` — NEW: `mean`, `median`, `averageHourlyArrays`, `averageDailyArrays`, `blendWithNWS`, `modelsForCountry`
+- `src/utils/__tests__/modelAverage.test.ts` — NEW: 22 tests
+- `src/data/nws.ts` — NEW: `fetchNWSGridpoint`, `fetchNWSSnowfall`, `nwsToSnowMap`
+- `src/data/__tests__/nws.test.ts` — NEW: 3 tests
+- `src/utils/snowRecalc.ts` — `snowLiquidRatio` upgraded with humidity + wind; `RecalcHourlyInput` extended
+- `src/utils/__tests__/snowRecalc.test.ts` — 13 new tests for humidity/wind/combined SLR + recalcHourly with inputs
+- `src/data/openmeteo.ts` — `OMForecastResponse` exported; `snow_depth` added to hourly vars/types; `mapHourly` passes humidity/wind to `recalcHourly`; `fetchMultiModelForecast` added
+- `src/hooks/useWeather.ts` — `useForecast` now uses multi-model + NWS blending pipeline
+- `src/types.ts` — `HourlyMetrics.snowDepth` added (optional)
+- `src/sw.ts` — NWS API caching route added
+
+### API call budget
+- Previous: 3 calls/resort (3 bands × 1 model)
+- Now: 9 calls/resort for Open-Meteo (3 bands × 3 models) + 2 for NWS (US only) = 11 max
+- Well within 10,000/day free tier (≥900 resort views/day)
+
+### Test impact
+- 215 tests across 21 files (up from ~177), all passing
 
 ## Status vs Plan
 
@@ -372,9 +587,77 @@ src/
 | GitHub repo link + feedback button | ✅ Complete |
 | Comprehensive UI unit tests | ✅ Complete |
 | PR screenshot generation | ✅ Complete |
+| Snowfall recalculation (accuracy fix) | ✅ Complete |
+| Multi-model averaging (accuracy improvement) | ✅ Complete |
+| Improved SLR (humidity + wind) | ✅ Complete |
+| NWS cross-reference (US resorts) | ✅ Complete |
+| Snow depth variable | ✅ Complete |
+| UI/UX Phase 2 — Snow Timeline + Conditions + Resort restructure | ✅ Complete |
+| UI/UX Phase 4 — Polish + Animations | ✅ Complete |
+| UI/UX Phase 5 — Icons, Snowpack, Mobile Fixes | ✅ Complete |
 | Map-based resort browser | 🔲 Not started |
 | Global resort coverage | 🔲 Not started |
 | Snow report / current conditions | 🔲 Not started |
 | Webcam links | 🔲 Not started |
 | Backend (accounts, alerts) | 🔲 Not started |
 | Trail map overlays | 🔲 Not started |
+
+---
+
+## Phase 17: UI/UX Phase 5 — Icons, Snowpack, Mobile Fixes
+
+### What changed
+
+**1. Emoji → Lucide Icon Pack Migration**
+- Replaced all emoji usage across the app with [Lucide React](https://lucide.dev/) SVG icons for cross-platform consistency.
+- Created `src/components/icons.tsx` — `WeatherIcon` component mapping WMO weather icon IDs (e.g., `'sun'`, `'cloud-snow'`, `'snowflake'`) to Lucide SVG components.
+- Updated `src/utils/weather.ts` — `WMO_MAP` now returns icon ID strings (e.g., `'sun'` instead of `'☀️'`) for all 28 WMO weather codes.
+- All section titles, row labels, UI controls, and weather displays now render uniform SVG icons:
+  - Section titles: `<Snowflake>`, `<BarChart3>`, `<Clock>`, `<Sun>`, `<Thermometer>`, `<TrendingUp>`
+  - Conditions table labels: `<Snowflake>` Snow, `<CloudRain>` Rain, `<Wind>` Wind, `<Droplets>` Precip %, `<Thermometer>` Freeze lvl
+  - UI controls: `<Star>` favorites, `<Globe>` timezone, `<Bell>`/`<BellOff>` alerts, `<ChevronUp>` scroll-to-top, `<RefreshCw>` refresh, `<AlertTriangle>` errors, `<Layers>` snowpack
+- Updated global CSS: SVG elements no longer forced to `display: block`; FAB buttons use `display: inline-flex` for proper icon+text alignment.
+
+**2. Favourites Icon Placement Fix**
+- Moved the favourite star from a floating right-side position to inline with the resort name (`resort-page__title-row` flex row).
+- Star is now directly next to the resort name and never overlaps with the FAB control group.
+- Reduced header `padding-right` from 260px/210px to 180px/140px since the star no longer needs its own space.
+- Uses Lucide `<Star>` with `fill="currentColor"` for active state, `fill="none"` for inactive.
+
+**3. SnowTimeline Mobile Overflow Fix**
+- Added `overflow-x: auto` with `-webkit-overflow-scrolling: touch` to the chart container.
+- Changed section flex from `flex: 1` to `flex: 1 0 auto` so bars maintain minimum width and scroll instead of compressing.
+- Reduced bar label font sizes on mobile (0.58rem) for denser layout before scroll kicks in.
+
+**4. Snowpack / Snow Depth Information**
+- Added a "Snowpack" stat to the quick stats row (next to Lifts, Acres) showing the current estimated snow depth for the selected elevation band, with `<Layers>` icon. Displayed in imperial (inches) or metric (cm).
+- Added a "Snowpack" row to the ConditionsSummary table showing snow depth across all three elevation bands (Base/Mid/Top).
+- Snow depth is computed as the max `snowDepth` value from the hourly data for the selected day, converted from meters to cm.
+
+### Why it changed
+- Emojis render differently across platforms (Windows, macOS, Android, iOS) causing inconsistent UX. SVG icons from Lucide are pixel-identical everywhere.
+- The favourite star was awkwardly floating on the right side of the header, disconnected from the resort name, and could be covered by the fixed FAB buttons on narrow screens.
+- SnowTimeline's 14 bars overflowed on mobile screens (<375px) because bars had min-width constraints that exceeded viewport width.
+- Snow depth (snowpack) data was already fetched from the API but not displayed anywhere — powder hunters need to know base depth to assess conditions.
+
+### Key files affected
+- `src/components/icons.tsx` — NEW: WeatherIcon component
+- `src/utils/weather.ts` — WMO icon IDs changed from emojis to string identifiers
+- `src/components/Layout.tsx` — Lucide icons for globe, bell, chevron
+- `src/components/Layout.css` — FAB `display: inline-flex`
+- `src/pages/ResortPage.tsx` — All section icons, fav inline with name, snowpack stat
+- `src/pages/ResortPage.css` — Title-row flex, section-title flex+icon styles, snowpack stat
+- `src/pages/HomePage.tsx` — Lucide Snowflake + Star icons
+- `src/pages/HomePage.css` — Icon alignment styles
+- `src/components/ResortCard.tsx` — Lucide Star icon
+- `src/components/FavoriteCard.tsx` — Lucide Star + WeatherIcon
+- `src/components/ConditionsSummary.tsx` — All row label icons + snowpack depth row
+- `src/components/ConditionsSummary.css` — Label icon styling + snowpack cell
+- `src/components/SnowTimeline.css` — overflow-x: auto, responsive font sizes
+- `src/styles/index.css` — SVG display rule updated
+- `src/components/ResortCard.css` — Fav button flex alignment
+- `src/components/FavoriteCard.css` — Tomorrow weather icon flex, fav button flex
+- Test files updated: weather.test.ts, ConditionsSummary.test.tsx, ResortCard.test.tsx, HomePage.test.tsx, ResortPage.test.tsx
+
+### Test impact
+- 215 tests across 21 files, all passing (0 new tests needed — existing tests updated for icon string changes)

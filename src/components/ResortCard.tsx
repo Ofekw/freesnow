@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom';
+import { Star } from 'lucide-react';
 import type { Resort } from '@/types';
 import { fmtElevation } from '@/utils/weather';
 import { useUnits } from '@/context/UnitsContext';
@@ -30,7 +31,7 @@ export function ResortCard({ resort, isFavorite, onToggleFavorite }: Props) {
           aria-label={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
           title={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
         >
-          {isFavorite ? '★' : '☆'}
+          <Star size={18} fill={isFavorite ? 'currentColor' : 'none'} />
         </button>
       </div>
       <p className="resort-card__region">

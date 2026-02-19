@@ -1,46 +1,48 @@
 /**
- * WMO Weather interpretation codes → human label + emoji icon.
+ * WMO Weather interpretation codes → human label + icon ID.
+ * Icon IDs map to Lucide SVG icons via the WeatherIcon component.
  * https://open-meteo.com/en/docs#weathervariables
  */
 
 interface WeatherDesc {
   label: string;
+  /** Lucide icon identifier — render with <WeatherIcon name={icon} /> */
   icon: string;
 }
 
 const WMO_MAP: Record<number, WeatherDesc> = {
-  0: { label: 'Clear sky', icon: '☀️' },
-  1: { label: 'Mainly clear', icon: '🌤️' },
-  2: { label: 'Partly cloudy', icon: '⛅' },
-  3: { label: 'Overcast', icon: '☁️' },
-  45: { label: 'Fog', icon: '🌫️' },
-  48: { label: 'Rime fog', icon: '🌫️' },
-  51: { label: 'Light drizzle', icon: '🌦️' },
-  53: { label: 'Drizzle', icon: '🌦️' },
-  55: { label: 'Dense drizzle', icon: '🌧️' },
-  56: { label: 'Light freezing drizzle', icon: '🌧️' },
-  57: { label: 'Freezing drizzle', icon: '🌧️' },
-  61: { label: 'Slight rain', icon: '🌦️' },
-  63: { label: 'Rain', icon: '🌧️' },
-  65: { label: 'Heavy rain', icon: '🌧️' },
-  66: { label: 'Light freezing rain', icon: '🌧️' },
-  67: { label: 'Freezing rain', icon: '🌧️' },
-  71: { label: 'Slight snow', icon: '🌨️' },
-  73: { label: 'Snow', icon: '🌨️' },
-  75: { label: 'Heavy snow', icon: '❄️' },
-  77: { label: 'Snow grains', icon: '❄️' },
-  80: { label: 'Slight rain showers', icon: '🌦️' },
-  81: { label: 'Rain showers', icon: '🌧️' },
-  82: { label: 'Violent rain showers', icon: '🌧️' },
-  85: { label: 'Slight snow showers', icon: '🌨️' },
-  86: { label: 'Heavy snow showers', icon: '❄️' },
-  95: { label: 'Thunderstorm', icon: '⛈️' },
-  96: { label: 'Thunderstorm w/ hail', icon: '⛈️' },
-  99: { label: 'Thunderstorm w/ heavy hail', icon: '⛈️' },
+  0: { label: 'Clear sky', icon: 'sun' },
+  1: { label: 'Mainly clear', icon: 'sun' },
+  2: { label: 'Partly cloudy', icon: 'cloud-sun' },
+  3: { label: 'Overcast', icon: 'cloud' },
+  45: { label: 'Fog', icon: 'cloud-fog' },
+  48: { label: 'Rime fog', icon: 'cloud-fog' },
+  51: { label: 'Light drizzle', icon: 'cloud-drizzle' },
+  53: { label: 'Drizzle', icon: 'cloud-drizzle' },
+  55: { label: 'Dense drizzle', icon: 'cloud-rain' },
+  56: { label: 'Light freezing drizzle', icon: 'cloud-rain' },
+  57: { label: 'Freezing drizzle', icon: 'cloud-rain' },
+  61: { label: 'Slight rain', icon: 'cloud-drizzle' },
+  63: { label: 'Rain', icon: 'cloud-rain' },
+  65: { label: 'Heavy rain', icon: 'cloud-rain' },
+  66: { label: 'Light freezing rain', icon: 'cloud-rain' },
+  67: { label: 'Freezing rain', icon: 'cloud-rain' },
+  71: { label: 'Slight snow', icon: 'cloud-snow' },
+  73: { label: 'Snow', icon: 'cloud-snow' },
+  75: { label: 'Heavy snow', icon: 'snowflake' },
+  77: { label: 'Snow grains', icon: 'snowflake' },
+  80: { label: 'Slight rain showers', icon: 'cloud-drizzle' },
+  81: { label: 'Rain showers', icon: 'cloud-rain' },
+  82: { label: 'Violent rain showers', icon: 'cloud-rain' },
+  85: { label: 'Slight snow showers', icon: 'cloud-snow' },
+  86: { label: 'Heavy snow showers', icon: 'snowflake' },
+  95: { label: 'Thunderstorm', icon: 'cloud-lightning' },
+  96: { label: 'Thunderstorm w/ hail', icon: 'cloud-lightning' },
+  99: { label: 'Thunderstorm w/ heavy hail', icon: 'cloud-lightning' },
 };
 
 export function weatherDescription(code: number): WeatherDesc {
-  return WMO_MAP[code] ?? { label: `Code ${code}`, icon: '❓' };
+  return WMO_MAP[code] ?? { label: `Code ${code}`, icon: 'help' };
 }
 
 /** Format temperature for display */

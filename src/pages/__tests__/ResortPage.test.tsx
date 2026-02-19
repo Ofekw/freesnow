@@ -164,7 +164,7 @@ describe('ResortPage', () => {
 
   it('renders refresh button', () => {
     renderResortPage();
-    expect(screen.getByText('↻ Refresh')).toBeInTheDocument();
+    expect(screen.getByText('Refresh')).toBeInTheDocument();
   });
 
   it('renders favorite toggle button', () => {
