@@ -696,3 +696,19 @@ Direct navigation or bookmarks to deep links (e.g., `https://opensnow.app/resort
 
 ### Files affected
 - `public/staticwebapp.config.json` (new)
+
+---
+
+## Resort Detail Day Selector Placement Tweak
+
+### What changed
+- Adjusted `ResortPage` layout so only the interactive 7-day day-card buttons are rendered directly under the elevation toggle/refresh controls.
+- Restored section flow so the **Conditions** table and the rest of the 7-day snow section (heading + charts) remain in their prior positions.
+- Updated resort page test coverage to assert the selected day-card button appears before the Conditions heading.
+
+### Why it changed
+- Keeps the page structure familiar while making it immediately clear that day selection controls the day-specific Conditions table.
+
+### Key files affected
+- `src/pages/ResortPage.tsx`
+- `src/pages/__tests__/ResortPage.test.tsx`

@@ -198,6 +198,36 @@ export function ResortPage() {
         </button>
       </div>
 
+      {bandData && (
+        <div className="daily-cards stagger-children">
+          {bandData.daily.map((d, i) => {
+            const desc = weatherDescription(d.weatherCode);
+            const isSelected = i === selectedDayIdx;
+            return (
+              <button
+                key={d.date}
+                className={`day-card ${isSelected ? 'day-card--selected' : ''}`}
+                onClick={() => setSelectedDayIdx(i)}
+                aria-pressed={isSelected}
+              >
+                <span className="day-card__date">
+                  {fmtDate(d.date + 'T12:00:00', { weekday: 'short' })}
+                </span>
+                <span className="day-card__icon" title={desc.label}>
+                  <WeatherIcon name={desc.icon} size={24} />
+                </span>
+                <span className="day-card__temps">
+                  {fmtTemp(d.temperatureMax, temp)} / {fmtTemp(d.temperatureMin, temp)}
+                </span>
+                <span className="day-card__snow">
+                  {d.snowfallSum > 0 ? <><Snowflake size={12} /> {fmtSnow(d.snowfallSum, snow)}</> : '—'}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+
       {error && <p className="resort-page__error"><AlertTriangle size={14} /> {error}</p>}
 
       {loading && !forecast && (
@@ -211,63 +241,6 @@ export function ResortPage() {
 
       {bandData && forecast && (
         <>
-          {/* ─── SNOWFALL SECTION ─── */}
-          <section className="resort-page__snow-section animate-fade-in-up">
-            <div className="resort-page__snow-section-header">
-              <h2 className="section-title">
-                <Snowflake size={18} className="section-title__icon" /> 7-Day Snow — {band.toUpperCase()} ({fmtElevation(bandData.elevation, elev)})
-              </h2>
-              {weekTotalSnow > 0 && (
-                <span className="resort-page__week-total">
-                  {fmtSnow(weekTotalSnow, snow)} next 7 days
-                </span>
-              )}
-            </div>
-
-            {/* Interactive day cards */}
-            <div className="daily-cards stagger-children">
-              {bandData.daily.map((d, i) => {
-                const desc = weatherDescription(d.weatherCode);
-                const isSelected = i === selectedDayIdx;
-                return (
-                  <button
-                    key={d.date}
-                    className={`day-card ${isSelected ? 'day-card--selected' : ''}`}
-                    onClick={() => setSelectedDayIdx(i)}
-                    aria-pressed={isSelected}
-                  >
-                    <span className="day-card__date">
-                      {fmtDate(d.date + 'T12:00:00', { weekday: 'short' })}
-                    </span>
-                    <span className="day-card__icon" title={desc.label}>
-                      <WeatherIcon name={desc.icon} size={24} />
-                    </span>
-                    <span className="day-card__temps">
-                      {fmtTemp(d.temperatureMax, temp)} / {fmtTemp(d.temperatureMin, temp)}
-                    </span>
-                    <span className="day-card__snow">
-                      {d.snowfallSum > 0 ? <><Snowflake size={12} /> {fmtSnow(d.snowfallSum, snow)}</> : '—'}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* 7-day overview chart */}
-            <div className="resort-page__chart-block">
-              <h3 className="section-subtitle">7-Day Overview</h3>
-              <DailyForecastChart daily={bandData.daily} />
-            </div>
-
-            {/* Hourly snow breakdown for selected day */}
-            {selectedDayHourly.length > 0 && (
-              <HourlySnowChart
-                hourly={selectedDayHourly}
-                dayLabel={selectedDayLabel}
-              />
-            )}
-          </section>
-
           {/* ─── CONDITIONS AT A GLANCE ─── */}
           <section className="resort-page__section animate-fade-in-up">
             <div className="resort-page__section-header">
@@ -285,6 +258,34 @@ export function ResortPage() {
               selectedDayIdx={selectedDayIdx}
               elevations={resort.elevation}
             />
+          </section>
+
+          {/* ─── SNOWFALL SECTION ─── */}
+          <section className="resort-page__snow-section animate-fade-in-up">
+            <div className="resort-page__snow-section-header">
+              <h2 className="section-title">
+                <Snowflake size={18} className="section-title__icon" /> 7-Day Snow — {band.toUpperCase()} ({fmtElevation(bandData.elevation, elev)})
+              </h2>
+              {weekTotalSnow > 0 && (
+                <span className="resort-page__week-total">
+                  {fmtSnow(weekTotalSnow, snow)} next 7 days
+                </span>
+              )}
+            </div>
+
+            {/* 7-day overview chart */}
+            <div className="resort-page__chart-block">
+              <h3 className="section-subtitle">7-Day Overview</h3>
+              <DailyForecastChart daily={bandData.daily} />
+            </div>
+
+            {/* Hourly snow breakdown for selected day */}
+            {selectedDayHourly.length > 0 && (
+              <HourlySnowChart
+                hourly={selectedDayHourly}
+                dayLabel={selectedDayLabel}
+              />
+            )}
           </section>
 
           {/* ─── DETAILED CONDITIONS ─── */}

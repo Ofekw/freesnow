@@ -174,12 +174,12 @@ describe('ResortPage', () => {
     ).toBeInTheDocument();
   });
 
-  it('renders 7-day snow section before conditions section', () => {
+  it('renders selected day card buttons before conditions section', () => {
     renderResortPage();
-    const snowHeading = screen.getByRole('heading', { name: /7-Day Snow/i });
+    const selectedDayCard = screen.getByRole('button', { pressed: true });
     const conditionsHeading = screen.getByRole('heading', { name: /Conditions —/i });
     expect(
-      snowHeading.compareDocumentPosition(conditionsHeading) & Node.DOCUMENT_POSITION_FOLLOWING,
+      selectedDayCard.compareDocumentPosition(conditionsHeading) & Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
   });
 
