@@ -198,6 +198,36 @@ export function ResortPage() {
         </button>
       </div>
 
+      {bandData && (
+        <div className="daily-cards stagger-children">
+          {bandData.daily.map((d, i) => {
+            const desc = weatherDescription(d.weatherCode);
+            const isSelected = i === selectedDayIdx;
+            return (
+              <button
+                key={d.date}
+                className={`day-card ${isSelected ? 'day-card--selected' : ''}`}
+                onClick={() => setSelectedDayIdx(i)}
+                aria-pressed={isSelected}
+              >
+                <span className="day-card__date">
+                  {fmtDate(d.date + 'T12:00:00', { weekday: 'short' })}
+                </span>
+                <span className="day-card__icon" title={desc.label}>
+                  <WeatherIcon name={desc.icon} size={24} />
+                </span>
+                <span className="day-card__temps">
+                  {fmtTemp(d.temperatureMax, temp)} / {fmtTemp(d.temperatureMin, temp)}
+                </span>
+                <span className="day-card__snow">
+                  {d.snowfallSum > 0 ? <><Snowflake size={12} /> {fmtSnow(d.snowfallSum, snow)}</> : '—'}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+
       {error && <p className="resort-page__error"><AlertTriangle size={14} /> {error}</p>}
 
       {loading && !forecast && (
@@ -241,35 +271,6 @@ export function ResortPage() {
                   {fmtSnow(weekTotalSnow, snow)} next 7 days
                 </span>
               )}
-            </div>
-
-            {/* Interactive day cards */}
-            <div className="daily-cards stagger-children">
-              {bandData.daily.map((d, i) => {
-                const desc = weatherDescription(d.weatherCode);
-                const isSelected = i === selectedDayIdx;
-                return (
-                  <button
-                    key={d.date}
-                    className={`day-card ${isSelected ? 'day-card--selected' : ''}`}
-                    onClick={() => setSelectedDayIdx(i)}
-                    aria-pressed={isSelected}
-                  >
-                    <span className="day-card__date">
-                      {fmtDate(d.date + 'T12:00:00', { weekday: 'short' })}
-                    </span>
-                    <span className="day-card__icon" title={desc.label}>
-                      <WeatherIcon name={desc.icon} size={24} />
-                    </span>
-                    <span className="day-card__temps">
-                      {fmtTemp(d.temperatureMax, temp)} / {fmtTemp(d.temperatureMin, temp)}
-                    </span>
-                    <span className="day-card__snow">
-                      {d.snowfallSum > 0 ? <><Snowflake size={12} /> {fmtSnow(d.snowfallSum, snow)}</> : '—'}
-                    </span>
-                  </button>
-                );
-              })}
             </div>
 
             {/* 7-day overview chart */}

@@ -174,6 +174,15 @@ describe('ResortPage', () => {
     ).toBeInTheDocument();
   });
 
+  it('renders selected day card buttons before conditions section', () => {
+    renderResortPage();
+    const selectedDayCard = screen.getByRole('button', { pressed: true });
+    const conditionsHeading = screen.getByRole('heading', { name: /Conditions —/i });
+    expect(
+      selectedDayCard.compareDocumentPosition(conditionsHeading) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+  });
+
   it('shows not found for invalid slug', () => {
     renderResortPage('nonexistent-resort');
     expect(screen.getByText('Resort not found')).toBeInTheDocument();
