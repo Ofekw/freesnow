@@ -22,13 +22,14 @@ beforeEach(() => {
 });
 
 describe('registerAppServiceWorker', () => {
-  it('forces a refresh when a new service worker is available', () => {
+  it('forces a refresh when a new service worker is available', async () => {
     const updateSW = mock();
     registerSW.mockImplementation(() => updateSW);
 
     registerAppServiceWorker();
     const [{ onNeedRefresh }] = registerSW.mock.calls[0];
     onNeedRefresh();
+    await Promise.resolve();
 
     expect(registerSW).toHaveBeenCalledWith(
       expect.objectContaining({

@@ -3,12 +3,12 @@ import { registerSW } from 'virtual:pwa-register';
 const SW_UPDATE_INTERVAL_MS = 60 * 60 * 1000;
 
 export function registerAppServiceWorker() {
-  let updateSW: ((reloadPage?: boolean) => Promise<void>) | undefined;
-
-  updateSW = registerSW({
+  const updateSW = registerSW({
     immediate: true,
     onNeedRefresh() {
-      void updateSW?.(true);
+      queueMicrotask(() => {
+        void updateSW(true);
+      });
     },
     onRegisteredSW(_swUrl, registration) {
       if (!registration) return;
