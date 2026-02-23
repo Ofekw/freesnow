@@ -174,6 +174,15 @@ describe('ResortPage', () => {
     ).toBeInTheDocument();
   });
 
+  it('renders 7-day snow section before conditions section', () => {
+    renderResortPage();
+    const snowHeading = screen.getByRole('heading', { name: /7-Day Snow/i });
+    const conditionsHeading = screen.getByRole('heading', { name: /Conditions —/i });
+    expect(
+      snowHeading.compareDocumentPosition(conditionsHeading) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+  });
+
   it('shows not found for invalid slug', () => {
     renderResortPage('nonexistent-resort');
     expect(screen.getByText('Resort not found')).toBeInTheDocument();

@@ -211,25 +211,6 @@ export function ResortPage() {
 
       {bandData && forecast && (
         <>
-          {/* ─── CONDITIONS AT A GLANCE ─── */}
-          <section className="resort-page__section animate-fade-in-up">
-            <div className="resort-page__section-header">
-              <h2 className="section-title">
-                <BarChart3 size={18} className="section-title__icon" /> Conditions — {selectedDayLabel}
-              </h2>
-              <span className="resort-page__section-badge">All Elevations</span>
-            </div>
-            <ConditionsSummary
-              bands={{
-                base: forecast.base,
-                mid: forecast.mid,
-                top: forecast.top,
-              }}
-              selectedDayIdx={selectedDayIdx}
-              elevations={resort.elevation}
-            />
-          </section>
-
           {/* ─── SNOWFALL SECTION ─── */}
           <section className="resort-page__snow-section animate-fade-in-up">
             <div className="resort-page__snow-section-header">
@@ -285,6 +266,25 @@ export function ResortPage() {
                 dayLabel={selectedDayLabel}
               />
             )}
+          </section>
+
+          {/* ─── CONDITIONS AT A GLANCE ─── */}
+          <section className="resort-page__section animate-fade-in-up">
+            <div className="resort-page__section-header">
+              <h2 className="section-title">
+                <BarChart3 size={18} className="section-title__icon" /> Conditions — {selectedDayLabel}
+              </h2>
+              <span className="resort-page__section-badge">All Elevations</span>
+            </div>
+            <ConditionsSummary
+              bands={{
+                base: forecast.base,
+                mid: forecast.mid,
+                top: forecast.top,
+              }}
+              selectedDayIdx={selectedDayIdx}
+              elevations={resort.elevation}
+            />
           </section>
 
           {/* ─── DETAILED CONDITIONS ─── */}
