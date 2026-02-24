@@ -771,3 +771,20 @@ Direct navigation or bookmarks to deep links (e.g., `https://opensnow.app/resort
 ### Follow-up notes
 - Existing users will lose localStorage preferences (keys renamed). This is acceptable for an early-stage rebrand.
 - `bun.lock` / `package-lock.json` will auto-update on next install.
+
+---
+
+## MiniSnowTimeline for Favourite Cards
+
+### What changed
+Added a compact 5-day snow timeline bar chart to the FavoriteCard component shown in the Favourites section of the Home Page. The mini timeline displays yesterday + today + next 3 days of snowfall, with today highlighted in accent color. Future days (including today) show AM/PM/Overnight sub-bars when hourly forecast data is available, matching the visual language of the full SnowTimeline on resort detail pages.
+
+### Why
+Gives users an at-a-glance snowfall trend for their favourited resorts directly on the home page, without needing to navigate to each resort's detail page.
+
+### Key files affected
+- `src/components/MiniSnowTimeline.tsx` — New compact 5-day snow timeline component
+- `src/components/MiniSnowTimeline.css` — Styling (bar heights, period colours, today accent)
+- `src/components/FavoriteCard.tsx` — Stores daily + hourly timeline data from forecast; renders MiniSnowTimeline
+- `src/components/__tests__/MiniSnowTimeline.test.tsx` — 14 new tests covering rendering, past/future bars, AM/PM/Overnight period splits, edge cases
+
