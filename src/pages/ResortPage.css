@@ -114,6 +114,7 @@
   flex-wrap: wrap;
   gap: var(--space-md);
   margin-top: var(--space-lg);
+  margin-bottom: var(--space-md);
 }
 
 .resort-page__refresh {
