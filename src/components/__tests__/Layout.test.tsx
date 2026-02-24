@@ -42,14 +42,16 @@ describe('Layout', () => {
     expect(screen.getByLabelText(/change timezone/i)).toBeInTheDocument();
   });
 
-  it('disables the snow alerts FAB when notifications are not supported', () => {
+  // Skipped: alert bell is hidden until a better alerts solution is implemented
+  it.skip('disables the snow alerts FAB when notifications are not supported', () => {
     renderWithProviders(<Layout />);
     const btn = screen.getByLabelText(/enable snow alerts/i);
     expect(btn).toBeInTheDocument();
     expect(btn).toBeDisabled();
   });
 
-  it('renders the snow alerts FAB enabled when notifications are supported', () => {
+  // Skipped: alert bell is hidden until a better alerts solution is implemented
+  it.skip('renders the snow alerts FAB enabled when notifications are supported', () => {
     Object.defineProperty(globalThis, 'Notification', {
       value: { permission: 'default', requestPermission: async () => 'default' },
       configurable: true,
@@ -79,6 +81,6 @@ describe('Layout', () => {
     renderWithProviders(<Layout />);
     const link = screen.getByText('Submit Feedback');
     expect(link).toBeInTheDocument();
-    expect(link).toHaveAttribute('href', 'https://github.com/Ofekw/freesnow/issues');
+    expect(link).toHaveAttribute('href', 'https://github.com/Ofekw/pow-fyi/issues');
   });
 });

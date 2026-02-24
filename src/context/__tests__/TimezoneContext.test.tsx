@@ -20,7 +20,9 @@ describe('TimezoneContext', () => {
   it('defaults to browser timezone', () => {
     const { result } = renderHook(() => useTimezone(), { wrapper });
     expect(result.current.tzRaw).toBe('');
-    expect(result.current.tzLabel).toBe('Browser');
+    // tzLabel should resolve to the browser's actual timezone label, not "Browser"
+    expect(result.current.tzLabel).not.toBe('Browser');
+    expect(result.current.tzLabel.length).toBeGreaterThan(0);
     expect(result.current.tz).toBeTruthy(); // should resolve to browser tz
   });
 
@@ -34,11 +36,11 @@ describe('TimezoneContext', () => {
   it('persists timezone to localStorage', () => {
     const { result } = renderHook(() => useTimezone(), { wrapper });
     act(() => result.current.setTz('UTC'));
-    expect(localStorage.getItem('freesnow_tz')).toBe('UTC');
+    expect(localStorage.getItem('pow_tz')).toBe('UTC');
   });
 
   it('reads persisted timezone on mount', () => {
-    localStorage.setItem('freesnow_tz', 'America/New_York');
+    localStorage.setItem('pow_tz', 'America/New_York');
     const { result } = renderHook(() => useTimezone(), { wrapper });
     expect(result.current.tz).toBe('America/New_York');
     expect(result.current.tzLabel).toBe('Eastern (ET)');
@@ -56,7 +58,7 @@ describe('TimezoneContext', () => {
   });
 
   it('resolves label for known timezone', () => {
-    localStorage.setItem('freesnow_tz', 'America/Los_Angeles');
+    localStorage.setItem('pow_tz', 'America/Los_Angeles');
     const { result } = renderHook(() => useTimezone(), { wrapper });
     expect(result.current.tzLabel).toBe('Pacific (PT)');
   });

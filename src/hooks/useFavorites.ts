@@ -10,7 +10,7 @@ export function useFavorites() {
   // Sync across tabs
   useEffect(() => {
     function onStorage(e: StorageEvent) {
-      if (e.key === 'freesnow_favorites') {
+      if (e.key === 'pow_favorites') {
         setFavorites(favStore.getFavorites());
       }
     }

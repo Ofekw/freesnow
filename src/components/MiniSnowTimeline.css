@@ -1,0 +1,132 @@
+/* ── MiniSnowTimeline — compact 5-day bar chart for favorite cards ── */
+
+.mini-timeline {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  padding: var(--space-sm) 0 0;
+}
+
+/* Individual column */
+.mini-timeline__col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+  gap: 2px;
+}
+
+.mini-timeline__col--today {
+  flex-shrink: 0;
+}
+
+/* Snow value above bar */
+.mini-timeline__value {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  min-height: 13px;
+  text-align: center;
+  line-height: 1;
+}
+
+.mini-timeline__value--today {
+  color: var(--color-accent);
+  font-weight: 700;
+}
+
+/* Bar track */
+.mini-timeline__track {
+  width: 100%;
+  height: 40px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+/* Period sub-bars layout */
+.mini-timeline__track--periods {
+  flex-direction: row;
+  align-items: flex-end;
+  gap: 1px;
+}
+
+.mini-timeline__track--today-border {
+  border: 1px solid rgba(56, 189, 248, 0.4);
+  border-radius: 3px;
+  padding: 0 1px;
+}
+
+/* Individual bars */
+.mini-timeline__bar {
+  border-radius: 2px 2px 0 0;
+  transition: height 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Past (yesterday) */
+.mini-timeline__bar--past {
+  width: 60%;
+  min-width: 6px;
+  max-width: 18px;
+  background: var(--color-surface-alt);
+  opacity: 0.7;
+}
+
+/* Today solid bar (fallback when no hourly breakdown) */
+.mini-timeline__bar--today {
+  width: 60%;
+  min-width: 6px;
+  max-width: 18px;
+  background: linear-gradient(to top, rgba(56, 189, 248, 0.7), rgba(56, 189, 248, 1));
+  box-shadow: 0 0 8px rgba(56, 189, 248, 0.3);
+  border: 1px solid rgba(56, 189, 248, 0.5);
+}
+
+/* Future solid bar (fallback when no hourly breakdown) */
+.mini-timeline__bar--future {
+  width: 60%;
+  min-width: 6px;
+  max-width: 18px;
+  background: linear-gradient(to top, rgba(56, 189, 248, 0.5), rgba(56, 189, 248, 0.9));
+  box-shadow: 0 0 6px rgba(56, 189, 248, 0.15);
+}
+
+/* AM / PM / Overnight sub-bars */
+.mini-timeline__bar--am,
+.mini-timeline__bar--pm,
+.mini-timeline__bar--overnight {
+  flex: 1;
+  min-width: 3px;
+  max-width: 8px;
+  cursor: default;
+}
+
+.mini-timeline__bar--am {
+  background: linear-gradient(to top, rgba(251, 191, 36, 0.55), rgba(251, 191, 36, 0.9));
+}
+
+.mini-timeline__bar--pm {
+  background: linear-gradient(to top, rgba(56, 189, 248, 0.6), rgba(56, 189, 248, 0.95));
+}
+
+.mini-timeline__bar--overnight {
+  background: linear-gradient(to top, rgba(139, 92, 246, 0.55), rgba(139, 92, 246, 0.9));
+}
+
+/* Day label */
+.mini-timeline__label {
+  font-size: 0.55rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  text-align: center;
+  white-space: nowrap;
+  text-transform: uppercase;
+}
+
+.mini-timeline__label--today {
+  color: var(--color-accent);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}

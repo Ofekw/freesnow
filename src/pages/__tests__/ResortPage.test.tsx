@@ -162,9 +162,21 @@ describe('ResortPage', () => {
     expect(screen.getByRole('radiogroup')).toBeInTheDocument();
   });
 
-  it('renders refresh button', () => {
+  it('renders refresh button in header', () => {
     renderResortPage();
-    expect(screen.getByText('Refresh')).toBeInTheDocument();
+    const refreshBtn = screen.getByText('Refresh');
+    expect(refreshBtn).toBeInTheDocument();
+    // Refresh button should be inside the header element
+    const header = refreshBtn.closest('header');
+    expect(header).not.toBeNull();
+    expect(header?.classList.contains('resort-page__header')).toBe(true);
+  });
+
+  it('shows last refreshed timestamp when data loaded', () => {
+    renderResortPage();
+    // The mock returns forecast data immediately, so lastRefreshed should be set
+    const refreshedSpan = document.querySelector('.resort-page__last-refreshed');
+    expect(refreshedSpan).toBeTruthy();
   });
 
   it('renders favorite toggle button', () => {
@@ -172,6 +184,15 @@ describe('ResortPage', () => {
     expect(
       screen.getByLabelText(/add to favorites|remove from favorites/i),
     ).toBeInTheDocument();
+  });
+
+  it('renders selected day card buttons before conditions section', () => {
+    renderResortPage();
+    const selectedDayCard = screen.getByRole('button', { pressed: true });
+    const conditionsHeading = screen.getByRole('heading', { name: /Conditions —/i });
+    expect(
+      selectedDayCard.compareDocumentPosition(conditionsHeading) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
   });
 
   it('shows not found for invalid slug', () => {

@@ -1,8 +1,8 @@
 /**
- * Free OpenSnow ECharts Theme — Grafana-inspired dark dashboard theme
+ * Pow.fyi ECharts Theme — Grafana-inspired dark dashboard theme
  *
  * Provides a registered ECharts theme + shared builder helpers for
- * consistent chart styling across all Free OpenSnow charts.
+ * consistent chart styling across all Pow.fyi charts.
  */
 import * as echarts from 'echarts/core';
 
@@ -65,9 +65,9 @@ const AXIS_LINE = { lineStyle: { color: COLORS.axis } };
 const AXIS_TICK = { lineStyle: { color: COLORS.axis } };
 const SPLIT_LINE = { lineStyle: { color: COLORS.grid, type: 'dashed' as const } };
 
-/* ── Register Free OpenSnow Theme ───────────────────────────────── */
+/* ── Register Pow.fyi Theme ──────────────────────────────────────── */
 
-echarts.registerTheme('freesnow', {
+echarts.registerTheme('pow', {
   color: [
     COLORS.snow,
     COLORS.rain,

@@ -1,6 +1,6 @@
-# Free OpenSnow — Implementation History
+# Pow.fyi — Implementation History
 
-A chronological log of all implementation work, decisions, and changes made during the build of FreeSnow.
+A chronological log of all implementation work, decisions, and changes made during the build of Pow.fyi.
 
 ---
 
@@ -696,3 +696,95 @@ Direct navigation or bookmarks to deep links (e.g., `https://opensnow.app/resort
 
 ### Files affected
 - `public/staticwebapp.config.json` (new)
+
+---
+
+## Resort Detail Day Selector Placement Tweak
+
+### What changed
+- Adjusted `ResortPage` layout so only the interactive 7-day day-card buttons are rendered directly under the elevation toggle/refresh controls.
+- Restored section flow so the **Conditions** table and the rest of the 7-day snow section (heading + charts) remain in their prior positions.
+- Updated resort page test coverage to assert the selected day-card button appears before the Conditions heading.
+
+### Why it changed
+- Keeps the page structure familiar while making it immediately clear that day selection controls the day-specific Conditions table.
+
+### Key files affected
+- `src/pages/ResortPage.tsx`
+- `src/pages/__tests__/ResortPage.test.tsx`
+
+---
+
+## SnowTimeline AM / PM / Overnight Period Sub-bars
+
+### What changed
+- **Today's bar and future forecast bars** in the SnowTimeline are now split into 3 grouped mini-bars per day: **AM** (6 AM–12 PM), **PM** (12 PM–6 PM), and **Overnight** (6 PM–6 AM), each with its own color:
+  - AM = amber/gold
+  - PM = sky blue (matches existing future bar color)
+  - Overnight = purple
+- Each sub-bar has a tooltip: "Morning snow: X″", "Afternoon snow: X″", "Overnight snow: X″".
+- Today's period track has a subtle accent border to maintain its visual distinction.
+- Falls back to the original single bar when hourly data is unavailable or the day has zero snowfall.
+- Past bars remain unchanged (single bars, muted style).
+- SnowTimeline now accepts an optional `forecastHourly` prop (`HourlyMetrics[]`) used to compute the period breakdown.
+- ResortPage passes `bandData.hourly` to SnowTimeline.
+
+### Why it changed
+- Provides powder hunters with finer-grained visibility into *when* significant snowfall is expected during the day, rather than just a daily total.
+
+### Key files affected
+- `src/components/SnowTimeline.tsx` — Added `forecastHourly` prop, `splitDayPeriods()` helper, period sub-bar rendering for today + future
+- `src/components/SnowTimeline.css` — New `.snow-timeline__bar--am`, `--pm`, `--overnight` styles with period track layout; `.snow-timeline__bar-track--today` accent border
+- `src/pages/ResortPage.tsx` — Passes `forecastHourly={bandData.hourly}` to SnowTimeline
+- `src/components/__tests__/SnowTimeline.test.tsx` — 8 new tests for period sub-bars (today + future)
+
+---
+
+## Rebrand: FreeSnow → Pow.fyi
+
+### What changed
+- Full rebrand from "FreeSnow" / "Free OpenSnow" / "OpenSnow.App" to **Pow.fyi** across all user-facing text, metadata, and internal identifiers.
+
+### Details
+- **HTML title** — `Free OpenSnow.app — Ski Resort Snow Forecasts` → `Pow.fyi — Ski Resort Snow Forecasts`
+- **PWA manifest** — `name` and `short_name` updated to `Pow.fyi`
+- **package.json** — package name changed to `pow-fyi`
+- **README.md** — heading, description, and all body references rebranded
+- **Footer** — display text and GitHub links updated to `pow-fyi` repo
+- **NWS User-Agent** — `FreeSnow/1.0` → `Pow.fyi/1.0` with new repo URL
+- **localStorage keys** — `freesnow_*` prefix changed to `pow_*` (`pow_favorites`, `pow_units`, `pow_tz`, `pow_snow_alert_settings_v1`, `pow_snow_alert_notified_v1`)
+- **Periodic sync tag** — `freesnow-snow-alert-check` → `pow-snow-alert-check`
+- **ECharts theme** — registered theme name `freesnow` → `pow`
+- **Code comments** — all "Free OpenSnow" / "FreeSnow" references in JSDoc and inline comments updated
+- **All test files** — updated to match new localStorage keys, URLs, and identifiers
+
+### Key files affected
+- `index.html`, `package.json`, `vite.config.ts`, `README.md`
+- `src/components/Layout.tsx`, `src/data/nws.ts`
+- `src/data/favorites.ts`, `src/hooks/useFavorites.ts`
+- `src/context/UnitsContext.tsx`, `src/context/TimezoneContext.tsx`
+- `src/alerts/storage.ts`, `src/alerts/snowAlerts.ts`, `src/sw.ts`
+- `src/components/charts/echarts-theme.ts`, `src/components/charts/BaseChart.tsx`
+- `src/components/SnowTimeline.tsx`
+- All corresponding `__tests__/` files
+
+### Follow-up notes
+- Existing users will lose localStorage preferences (keys renamed). This is acceptable for an early-stage rebrand.
+- `bun.lock` / `package-lock.json` will auto-update on next install.
+
+---
+
+## MiniSnowTimeline for Favourite Cards
+
+### What changed
+Added a compact 5-day snow timeline bar chart to the FavoriteCard component shown in the Favourites section of the Home Page. The mini timeline displays yesterday + today + next 3 days of snowfall, with today highlighted in accent color. Future days (including today) show AM/PM/Overnight sub-bars when hourly forecast data is available, matching the visual language of the full SnowTimeline on resort detail pages.
+
+### Why
+Gives users an at-a-glance snowfall trend for their favourited resorts directly on the home page, without needing to navigate to each resort's detail page.
+
+### Key files affected
+- `src/components/MiniSnowTimeline.tsx` — New compact 5-day snow timeline component
+- `src/components/MiniSnowTimeline.css` — Styling (bar heights, period colours, today accent)
+- `src/components/FavoriteCard.tsx` — Stores daily + hourly timeline data from forecast; renders MiniSnowTimeline
+- `src/components/__tests__/MiniSnowTimeline.test.tsx` — 14 new tests covering rendering, past/future bars, AM/PM/Overnight period splits, edge cases
+

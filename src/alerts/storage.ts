@@ -1,7 +1,7 @@
 import { get, set } from 'idb-keyval';
 
-const SETTINGS_KEY = 'freesnow_snow_alert_settings_v1';
-const NOTIFIED_KEY = 'freesnow_snow_alert_notified_v1';
+const SETTINGS_KEY = 'pow_snow_alert_settings_v1';
+const NOTIFIED_KEY = 'pow_snow_alert_notified_v1';
 const memoryStore = new Map<string, unknown>();
 
 export interface SnowAlertSettings {

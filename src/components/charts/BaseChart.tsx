@@ -1,5 +1,5 @@
 /**
- * BaseChart — Thin wrapper around ReactECharts applying the Free OpenSnow theme.
+ * BaseChart — Thin wrapper around ReactECharts applying the Pow.fyi theme.
  *
  * Handles: theme registration, responsive resize, loading skeleton,
  * and consistent container styling across all charts.
@@ -7,7 +7,7 @@
 import ReactECharts from 'echarts-for-react';
 import type { EChartsOption } from 'echarts';
 import * as echarts from 'echarts/core';
-// Side-effect: registers the 'freesnow' theme on first import
+// Side-effect: registers the 'pow' theme on first import
 import './echarts-theme';
 
 interface Props {
@@ -43,7 +43,7 @@ export function BaseChart({
       ) : (
         <ReactECharts
           option={option}
-          theme="freesnow"
+          theme="pow"
           style={{ height: '100%', width: '100%' }}
           opts={{ renderer: 'canvas' }}
           notMerge

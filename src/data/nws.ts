@@ -52,7 +52,7 @@ async function nwsFetch<T>(url: string): Promise<T> {
   const res = await fetch(url, {
     headers: {
       Accept: 'application/geo+json',
-      'User-Agent': 'FreeSnow/1.0 (https://github.com/Ofekw/freesnow)',
+      'User-Agent': 'Pow.fyi/1.0 (https://github.com/Ofekw/pow-fyi)',
     },
   });
   if (!res.ok) throw new Error(`NWS ${res.status}: ${res.statusText}`);

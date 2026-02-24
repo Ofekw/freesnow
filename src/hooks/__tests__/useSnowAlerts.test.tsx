@@ -4,8 +4,8 @@ import { TimezoneProvider } from '@/context/TimezoneContext';
 import { useSnowAlerts } from '@/hooks/useSnowAlerts';
 import { getSnowAlertSettings } from '@/alerts/storage';
 
-const FAVORITES_KEY = 'freesnow_favorites';
-const TZ_KEY = 'freesnow_tz';
+const FAVORITES_KEY = 'pow_favorites';
+const TZ_KEY = 'pow_tz';
 
 let originalNotification: typeof globalThis.Notification | undefined;
 let originalServiceWorker: ServiceWorkerContainer | undefined;

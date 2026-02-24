@@ -19,12 +19,12 @@ describe('favorites data store', () => {
 
     it('returns stored favorites', () => {
       const fav = [{ slug: 'vail-co', addedAt: '2025-01-01T00:00:00.000Z' }];
-      localStorage.setItem('freesnow_favorites', JSON.stringify(fav));
+      localStorage.setItem('pow_favorites', JSON.stringify(fav));
       expect(getFavorites()).toEqual(fav);
     });
 
     it('returns empty array on corrupted data', () => {
-      localStorage.setItem('freesnow_favorites', 'not-json');
+      localStorage.setItem('pow_favorites', 'not-json');
       expect(getFavorites()).toEqual([]);
     });
   });
@@ -56,7 +56,7 @@ describe('favorites data store', () => {
 
     it('persists to localStorage', () => {
       addFavorite('vail-co');
-      const stored = JSON.parse(localStorage.getItem('freesnow_favorites')!);
+      const stored = JSON.parse(localStorage.getItem('pow_favorites')!);
       expect(stored).toHaveLength(1);
       expect(stored[0].slug).toBe('vail-co');
     });

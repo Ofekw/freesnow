@@ -2,11 +2,13 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Star } from 'lucide-react';
 import { WeatherIcon } from '@/components/icons';
-import type { Resort, DailyMetrics } from '@/types';
+import type { Resort, DailyMetrics, HourlyMetrics } from '@/types';
 import { fetchForecast } from '@/data/openmeteo';
 import { weatherDescription, fmtTemp, fmtSnow, fmtElevation } from '@/utils/weather';
+import { todayIsoInTimezone } from '@/utils/dateKey';
 import { useUnits } from '@/context/UnitsContext';
 import { useTimezone } from '@/context/TimezoneContext';
+import { MiniSnowTimeline } from '@/components/MiniSnowTimeline';
 import './FavoriteCard.css';
 
 interface Props {
@@ -19,6 +21,12 @@ interface SummaryData {
   next7Snow: number;       // cm
   next14Snow: number;      // cm
   tomorrow: DailyMetrics | null;
+  /** Past days for the mini timeline (chronological, oldest → newest) */
+  timelinePast: DailyMetrics[];
+  /** Today + future days for the mini timeline (chronological) */
+  timelineForecast: DailyMetrics[];
+  /** Hourly forecast data for AM/PM/Overnight splits */
+  timelineHourly: HourlyMetrics[];
 }
 
 export function FavoriteCard({ resort, onToggleFavorite }: Props) {
@@ -42,7 +50,7 @@ export function FavoriteCard({ resort, onToggleFavorite }: Props) {
         if (cancelled) return;
 
         const dailyDays = forecastData?.daily ?? [];
-        const today = new Date().toISOString().slice(0, 10);
+        const today = todayIsoInTimezone(tz);
 
         // Split into past and future days (ISO date strings can be compared lexicographically)
         const pastDays = dailyDays.filter((d) => d.date < today);
@@ -64,7 +72,12 @@ export function FavoriteCard({ resort, onToggleFavorite }: Props) {
         // Tomorrow: second element in futureDays (first is today)
         const tomorrow = futureDays[1] ?? null;
 
-        setSummary({ last14Snow, next7Snow, next14Snow, tomorrow });
+        // Timeline data: yesterday (last past day) + today + next 3 future
+        const timelinePast = pastDays.slice(-1); // just yesterday
+        const timelineForecast = futureDays.slice(0, 4); // today + next 3
+        const timelineHourly = forecastData?.hourly ?? [];
+
+        setSummary({ last14Snow, next7Snow, next14Snow, tomorrow, timelinePast, timelineForecast, timelineHourly });
       } catch {
         // Silently fail — card still shows static info
       } finally {
@@ -150,6 +163,15 @@ export function FavoriteCard({ resort, onToggleFavorite }: Props) {
               <span className="fav-card__snow-value">{fmtSnow(summary.next14Snow, snow)}</span>
             </div>
           </div>
+
+          {/* 5-day mini snow timeline */}
+          {summary.timelineForecast.length > 0 && (
+            <MiniSnowTimeline
+              pastDays={summary.timelinePast}
+              forecastDays={summary.timelineForecast}
+              forecastHourly={summary.timelineHourly}
+            />
+          )}
         </>
       ) : (
         <div className="fav-card__loading">Forecast unavailable</div>

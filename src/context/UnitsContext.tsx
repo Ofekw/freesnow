@@ -18,7 +18,7 @@ const UnitsContext = createContext<UnitsContextValue>({
   snow: 'in',
 });
 
-const STORAGE_KEY = 'freesnow_units';
+const STORAGE_KEY = 'pow_units';
 
 function readStored(): UnitSystem {
   try {

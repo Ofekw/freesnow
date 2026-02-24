@@ -1,6 +1,6 @@
 import type { FavoriteResort } from '@/types';
 
-const STORAGE_KEY = 'freesnow_favorites';
+const STORAGE_KEY = 'pow_favorites';
 
 function readAll(): FavoriteResort[] {
   try {

@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import {
   Snowflake, BarChart3, Clock, Sun, Thermometer,
@@ -19,6 +19,7 @@ import { RecentSnowChart } from '@/components/charts/RecentSnowChart';
 import { FreezingLevelChart } from '@/components/charts/FreezingLevelChart';
 import { UVIndexChart } from '@/components/charts/UVIndexChart';
 import { weatherDescription, fmtTemp, fmtElevation, fmtSnow, cmToIn } from '@/utils/weather';
+import { todayIsoInTimezone } from '@/utils/dateKey';
 import { useUnits } from '@/context/UnitsContext';
 import { useTimezone } from '@/context/TimezoneContext';
 import type { ElevationBand, BandForecast, DailyMetrics } from '@/types';
@@ -33,6 +34,21 @@ export function ResortPage() {
   const { tz, fmtDate } = useTimezone();
   const [band, setBand] = useState<ElevationBand>('mid');
   const [selectedDayIdx, setSelectedDayIdx] = useState(0);
+  const [lastRefreshed, setLastRefreshed] = useState<Date | null>(null);
+  const prevFetchedAtRef = useRef<string | undefined>(undefined);
+
+  // Track when forecast data arrives (keyed on fetchedAt to avoid re-runs)
+  useEffect(() => {
+    const fetchedAt = forecast?.fetchedAt;
+    if (fetchedAt && fetchedAt !== prevFetchedAtRef.current) {
+      prevFetchedAtRef.current = fetchedAt;
+      setLastRefreshed(new Date());
+    }
+  }, [forecast?.fetchedAt]);
+
+  const handleRefresh = useCallback(() => {
+    refetch();
+  }, [refetch]);
 
   // Recent 14-day snowfall via forecast endpoint's past_days (no archive lag)
   const [recentDays, setRecentDays] = useState<DailyMetrics[]>([]);
@@ -45,7 +61,7 @@ export function ResortPage() {
     fetchForecast(resort.lat, resort.lon, resort.elevation[band], band, 1, 14, tz)
       .then((result) => {
         if (!cancelled) {
-          const today = new Date().toISOString().slice(0, 10);
+          const today = todayIsoInTimezone(tz);
           setRecentDays(result.daily.filter((d) => d.date < today));
         }
       })
@@ -55,7 +71,7 @@ export function ResortPage() {
   }, [resort, tz, band]);
 
   // Reset selected day when forecast data is refetched (not on band change)
-  useEffect(() => { setSelectedDayIdx(0); }, [forecast]);
+  useEffect(() => { setSelectedDayIdx(0); }, [forecast?.fetchedAt]);
 
   const bandData: BandForecast | undefined = forecast?.[band];
 
@@ -107,7 +123,7 @@ export function ResortPage() {
     <div className="resort-page">
       {/* Header */}
       <header className="resort-page__header">
-        <div>
+        <div className="resort-page__header-left">
           <Link to="/" className="resort-page__back">← All Resorts</Link>
           <div className="resort-page__title-row">
             <h1 className="resort-page__name">{resort.name}</h1>
@@ -130,6 +146,16 @@ export function ResortPage() {
               </>
             )}
           </p>
+        </div>
+        <div className="resort-page__header-right">
+          <button className="resort-page__refresh" onClick={handleRefresh} disabled={loading}>
+            {loading ? 'Loading…' : <><RefreshCw size={14} /> Refresh</>}
+          </button>
+          {lastRefreshed && (
+            <span className="resort-page__last-refreshed">
+              {fmtDate(lastRefreshed.toISOString(), { hour: 'numeric', minute: '2-digit' })}
+            </span>
+          )}
         </div>
       </header>
 
@@ -182,21 +208,49 @@ export function ResortPage() {
           <SnowTimeline
             recentDays={recentDays}
             forecastDays={bandData.daily}
+            forecastHourly={bandData.hourly}
           />
         </section>
       )}
 
-      {/* Band toggle + refresh */}
+      {/* Band toggle */}
       <div className="resort-page__toggle-row">
         <ElevationToggle
           value={band}
           onChange={setBand}
           elevations={resort.elevation}
         />
-        <button className="resort-page__refresh" onClick={refetch} disabled={loading}>
-          {loading ? 'Loading…' : <><RefreshCw size={14} /> Refresh</>}
-        </button>
       </div>
+
+      {bandData && (
+        <div className="daily-cards stagger-children">
+          {bandData.daily.map((d, i) => {
+            const desc = weatherDescription(d.weatherCode);
+            const isSelected = i === selectedDayIdx;
+            return (
+              <button
+                key={d.date}
+                className={`day-card ${isSelected ? 'day-card--selected' : ''}`}
+                onClick={() => setSelectedDayIdx(i)}
+                aria-pressed={isSelected}
+              >
+                <span className="day-card__date">
+                  {fmtDate(d.date + 'T12:00:00', { weekday: 'short' })}
+                </span>
+                <span className="day-card__icon" title={desc.label}>
+                  <WeatherIcon name={desc.icon} size={24} />
+                </span>
+                <span className="day-card__temps">
+                  {fmtTemp(d.temperatureMax, temp)} / {fmtTemp(d.temperatureMin, temp)}
+                </span>
+                <span className="day-card__snow">
+                  {d.snowfallSum > 0 ? <><Snowflake size={12} /> {fmtSnow(d.snowfallSum, snow)}</> : '—'}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       {error && <p className="resort-page__error"><AlertTriangle size={14} /> {error}</p>}
 
@@ -241,35 +295,6 @@ export function ResortPage() {
                   {fmtSnow(weekTotalSnow, snow)} next 7 days
                 </span>
               )}
-            </div>
-
-            {/* Interactive day cards */}
-            <div className="daily-cards stagger-children">
-              {bandData.daily.map((d, i) => {
-                const desc = weatherDescription(d.weatherCode);
-                const isSelected = i === selectedDayIdx;
-                return (
-                  <button
-                    key={d.date}
-                    className={`day-card ${isSelected ? 'day-card--selected' : ''}`}
-                    onClick={() => setSelectedDayIdx(i)}
-                    aria-pressed={isSelected}
-                  >
-                    <span className="day-card__date">
-                      {fmtDate(d.date + 'T12:00:00', { weekday: 'short' })}
-                    </span>
-                    <span className="day-card__icon" title={desc.label}>
-                      <WeatherIcon name={desc.icon} size={24} />
-                    </span>
-                    <span className="day-card__temps">
-                      {fmtTemp(d.temperatureMax, temp)} / {fmtTemp(d.temperatureMin, temp)}
-                    </span>
-                    <span className="day-card__snow">
-                      {d.snowfallSum > 0 ? <><Snowflake size={12} /> {fmtSnow(d.snowfallSum, snow)}</> : '—'}
-                    </span>
-                  </button>
-                );
-              })}
             </div>
 
             {/* 7-day overview chart */}
