@@ -39,11 +39,11 @@ describe('UnitsContext', () => {
   it('persists choice to localStorage', () => {
     const { result } = renderHook(() => useUnits(), { wrapper });
     act(() => result.current.toggle());
-    expect(localStorage.getItem('freesnow_units')).toBe('metric');
+    expect(localStorage.getItem('pow_units')).toBe('metric');
   });
 
   it('reads persisted value on mount', () => {
-    localStorage.setItem('freesnow_units', 'metric');
+    localStorage.setItem('pow_units', 'metric');
     const { result } = renderHook(() => useUnits(), { wrapper });
     expect(result.current.units).toBe('metric');
   });

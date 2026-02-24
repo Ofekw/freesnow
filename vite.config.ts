@@ -13,8 +13,8 @@ export default defineConfig({
       filename: 'sw.ts',
       includeAssets: ['favicon.svg', 'apple-touch-icon.png'],
       manifest: {
-        name: 'FreeSnow',
-        short_name: 'FreeSnow',
+        name: 'Pow.fyi',
+        short_name: 'Pow.fyi',
         description: 'Free & open-source ski resort snow forecasts',
         theme_color: '#1e40af',
         background_color: '#0f172a',

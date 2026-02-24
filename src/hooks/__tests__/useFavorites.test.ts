@@ -60,7 +60,7 @@ describe('useFavorites', () => {
   it('persists to localStorage', () => {
     const { result } = renderHook(() => useFavorites());
     act(() => result.current.toggle('vail-co'));
-    const stored = JSON.parse(localStorage.getItem('freesnow_favorites')!);
+    const stored = JSON.parse(localStorage.getItem('pow_favorites')!);
     expect(stored).toHaveLength(1);
     expect(stored[0].slug).toBe('vail-co');
   });

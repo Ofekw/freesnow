@@ -103,7 +103,7 @@ async function runSnowAlertCheck() {
 
 self.addEventListener('periodicsync', (event: Event) => {
   const periodicEvent = event as Event & { tag?: string; waitUntil?: (promise: Promise<unknown>) => void };
-  if (periodicEvent.tag !== 'freesnow-snow-alert-check') return;
+  if (periodicEvent.tag !== 'pow-snow-alert-check') return;
   periodicEvent.waitUntil?.(runSnowAlertCheck());
 });
 

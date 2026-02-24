@@ -1,6 +1,6 @@
-# Free OpenSnow — Implementation History
+# Pow.fyi — Implementation History
 
-A chronological log of all implementation work, decisions, and changes made during the build of FreeSnow.
+A chronological log of all implementation work, decisions, and changes made during the build of Pow.fyi.
 
 ---
 
@@ -737,3 +737,37 @@ Direct navigation or bookmarks to deep links (e.g., `https://opensnow.app/resort
 - `src/components/SnowTimeline.css` — New `.snow-timeline__bar--am`, `--pm`, `--overnight` styles with period track layout; `.snow-timeline__bar-track--today` accent border
 - `src/pages/ResortPage.tsx` — Passes `forecastHourly={bandData.hourly}` to SnowTimeline
 - `src/components/__tests__/SnowTimeline.test.tsx` — 8 new tests for period sub-bars (today + future)
+
+---
+
+## Rebrand: FreeSnow → Pow.fyi
+
+### What changed
+- Full rebrand from "FreeSnow" / "Free OpenSnow" / "OpenSnow.App" to **Pow.fyi** across all user-facing text, metadata, and internal identifiers.
+
+### Details
+- **HTML title** — `Free OpenSnow.app — Ski Resort Snow Forecasts` → `Pow.fyi — Ski Resort Snow Forecasts`
+- **PWA manifest** — `name` and `short_name` updated to `Pow.fyi`
+- **package.json** — package name changed to `pow-fyi`
+- **README.md** — heading, description, and all body references rebranded
+- **Footer** — display text and GitHub links updated to `pow-fyi` repo
+- **NWS User-Agent** — `FreeSnow/1.0` → `Pow.fyi/1.0` with new repo URL
+- **localStorage keys** — `freesnow_*` prefix changed to `pow_*` (`pow_favorites`, `pow_units`, `pow_tz`, `pow_snow_alert_settings_v1`, `pow_snow_alert_notified_v1`)
+- **Periodic sync tag** — `freesnow-snow-alert-check` → `pow-snow-alert-check`
+- **ECharts theme** — registered theme name `freesnow` → `pow`
+- **Code comments** — all "Free OpenSnow" / "FreeSnow" references in JSDoc and inline comments updated
+- **All test files** — updated to match new localStorage keys, URLs, and identifiers
+
+### Key files affected
+- `index.html`, `package.json`, `vite.config.ts`, `README.md`
+- `src/components/Layout.tsx`, `src/data/nws.ts`
+- `src/data/favorites.ts`, `src/hooks/useFavorites.ts`
+- `src/context/UnitsContext.tsx`, `src/context/TimezoneContext.tsx`
+- `src/alerts/storage.ts`, `src/alerts/snowAlerts.ts`, `src/sw.ts`
+- `src/components/charts/echarts-theme.ts`, `src/components/charts/BaseChart.tsx`
+- `src/components/SnowTimeline.tsx`
+- All corresponding `__tests__/` files
+
+### Follow-up notes
+- Existing users will lose localStorage preferences (keys renamed). This is acceptable for an early-stage rebrand.
+- `bun.lock` / `package-lock.json` will auto-update on next install.

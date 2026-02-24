@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useCallback, type ReactNode } from 'react';
 
-const STORAGE_KEY = 'freesnow_tz';
+const STORAGE_KEY = 'pow_tz';
 
 /** Compute the current UTC offset string for a given IANA timezone */
 export function getUtcOffset(iana: string): string {

@@ -1,7 +1,7 @@
 /**
  * SnowTimeline — At-a-glance past + future snowfall bar.
  *
- * Inspired by OpenSnow's snow summary: shows past 7 days + upcoming 7 days
+ * Compact snow summary: shows past 7 days + upcoming 7 days
  * as a compact horizontal bar chart with a vertical "today" divider.
  * Future forecast days are broken into AM / PM / Overnight sub-bars for
  * more granular visibility into when snowfall is expected.

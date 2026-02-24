@@ -4,7 +4,7 @@ import {
   type SnowAlertSettings,
 } from '@/alerts/storage';
 
-export const SNOW_ALERT_PERIODIC_TAG = 'freesnow-snow-alert-check';
+export const SNOW_ALERT_PERIODIC_TAG = 'pow-snow-alert-check';
 export const SNOW_ALERT_MIN_INTERVAL_MS = 12 * 60 * 60 * 1000;
 
 interface PeriodicSyncManagerLike {

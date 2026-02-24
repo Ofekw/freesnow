@@ -140,13 +140,13 @@ export function Layout() {
             <a href="https://www.weather.gov/documentation/services-web-api" target="_blank" rel="noopener noreferrer">NWS Weather.gov</a>.
           </p>
           <p>
-            Free OpenSnow is{' '}
-            <a href="https://github.com/Ofekw/freesnow" target="_blank" rel="noopener noreferrer">open-source</a>
+            Pow.fyi is{' '}
+            <a href="https://github.com/Ofekw/pow-fyi" target="_blank" rel="noopener noreferrer">open-source</a>
             {' '}&amp; non-commercial.
           </p>
           <a
             className="footer__feedback"
-            href="https://github.com/Ofekw/freesnow/issues"
+            href="https://github.com/Ofekw/pow-fyi/issues"
             target="_blank"
             rel="noopener noreferrer"
           >
