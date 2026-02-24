@@ -1,15 +1,15 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { Outlet } from 'react-router-dom';
-import { Globe, Bell, BellOff, ChevronUp } from 'lucide-react';
+import { Globe, ChevronUp } from 'lucide-react';
 import { useUnits } from '@/context/UnitsContext';
 import { useTimezone, TZ_OPTIONS, getUtcOffset } from '@/context/TimezoneContext';
-import { useSnowAlerts } from '@/hooks/useSnowAlerts';
+// import { useSnowAlerts } from '@/hooks/useSnowAlerts';
 import './Layout.css';
 
 export function Layout() {
   const { units, toggle, temp, elev } = useUnits();
   const { tzRaw, tzLabel, setTz } = useTimezone();
-  const { statusTitle, toggleAlerts, isSupported, enabled, permission } = useSnowAlerts();
+  // const { statusTitle, toggleAlerts, isSupported, enabled, permission } = useSnowAlerts();
   const [tzOpen, setTzOpen] = useState(false);
   const [tzSearch, setTzSearch] = useState('');
   const [showScrollTop, setShowScrollTop] = useState(false);
@@ -78,17 +78,7 @@ export function Layout() {
           °{temp} / {elev}
         </button>
 
-        <button
-          className={`fab fab--alert${permission === 'denied' ? ' fab--alert-blocked' : enabled ? ' fab--alert-on' : ''}`}
-          onClick={toggleAlerts}
-          aria-label={enabled ? 'Disable snow alerts' : 'Enable snow alerts'}
-          title={statusTitle}
-          disabled={!isSupported}
-        >
-          {permission === 'denied' || (permission === 'granted' && !enabled)
-            ? <BellOff size={16} />
-            : <Bell size={16} />}
-        </button>
+        {/* Alert bell hidden until a better alerts solution is implemented */}
 
         <div className="tz-picker" ref={tzRef}>
           <button

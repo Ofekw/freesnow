@@ -20,7 +20,9 @@ describe('TimezoneContext', () => {
   it('defaults to browser timezone', () => {
     const { result } = renderHook(() => useTimezone(), { wrapper });
     expect(result.current.tzRaw).toBe('');
-    expect(result.current.tzLabel).toBe('Browser');
+    // tzLabel should resolve to the browser's actual timezone label, not "Browser"
+    expect(result.current.tzLabel).not.toBe('Browser');
+    expect(result.current.tzLabel.length).toBeGreaterThan(0);
     expect(result.current.tz).toBeTruthy(); // should resolve to browser tz
   });
 

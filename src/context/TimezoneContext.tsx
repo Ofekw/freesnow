@@ -79,9 +79,10 @@ export function TimezoneProvider({ children }: { children: ReactNode }) {
     setTzRaw(iana);
   }, []);
 
-  const tzLabel = tzRaw
-    ? (TZ_OPTIONS.find((o) => o.value === tzRaw)?.label ?? tzRaw.split('/').pop()!.replace(/_/g, ' '))
-    : 'Browser';
+  const resolvedIana = tzRaw || browserTz;
+  const tzLabel =
+    TZ_OPTIONS.find((o) => o.value === resolvedIana)?.label ??
+    resolvedIana.split('/').pop()!.replace(/_/g, ' ');
 
   const fmtDate = useCallback(
     (iso: string | Date, opts: Intl.DateTimeFormatOptions): string => {
