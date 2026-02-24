@@ -712,3 +712,28 @@ Direct navigation or bookmarks to deep links (e.g., `https://opensnow.app/resort
 ### Key files affected
 - `src/pages/ResortPage.tsx`
 - `src/pages/__tests__/ResortPage.test.tsx`
+
+---
+
+## SnowTimeline AM / PM / Overnight Period Sub-bars
+
+### What changed
+- **Today's bar and future forecast bars** in the SnowTimeline are now split into 3 grouped mini-bars per day: **AM** (6 AM–12 PM), **PM** (12 PM–6 PM), and **Overnight** (6 PM–6 AM), each with its own color:
+  - AM = amber/gold
+  - PM = sky blue (matches existing future bar color)
+  - Overnight = purple
+- Each sub-bar has a tooltip: "Morning snow: X″", "Afternoon snow: X″", "Overnight snow: X″".
+- Today's period track has a subtle accent border to maintain its visual distinction.
+- Falls back to the original single bar when hourly data is unavailable or the day has zero snowfall.
+- Past bars remain unchanged (single bars, muted style).
+- SnowTimeline now accepts an optional `forecastHourly` prop (`HourlyMetrics[]`) used to compute the period breakdown.
+- ResortPage passes `bandData.hourly` to SnowTimeline.
+
+### Why it changed
+- Provides powder hunters with finer-grained visibility into *when* significant snowfall is expected during the day, rather than just a daily total.
+
+### Key files affected
+- `src/components/SnowTimeline.tsx` — Added `forecastHourly` prop, `splitDayPeriods()` helper, period sub-bar rendering for today + future
+- `src/components/SnowTimeline.css` — New `.snow-timeline__bar--am`, `--pm`, `--overnight` styles with period track layout; `.snow-timeline__bar-track--today` accent border
+- `src/pages/ResortPage.tsx` — Passes `forecastHourly={bandData.hourly}` to SnowTimeline
+- `src/components/__tests__/SnowTimeline.test.tsx` — 8 new tests for period sub-bars (today + future)

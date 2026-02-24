@@ -3,7 +3,7 @@ import { render, screen } from '@testing-library/react';
 import { UnitsProvider } from '@/context/UnitsContext';
 import { TimezoneProvider } from '@/context/TimezoneContext';
 import { SnowTimeline } from '@/components/SnowTimeline';
-import type { DailyMetrics } from '@/types';
+import type { DailyMetrics, HourlyMetrics } from '@/types';
 
 function makeDailyMetrics(date: string, snowfallSum: number): DailyMetrics {
   return {
@@ -23,11 +23,47 @@ function makeDailyMetrics(date: string, snowfallSum: number): DailyMetrics {
   };
 }
 
-function renderTimeline(recentDays: DailyMetrics[], forecastDays: DailyMetrics[]) {
+function makeHourlyMetrics(time: string, snowfall: number): HourlyMetrics {
+  return {
+    time,
+    temperature: -5,
+    apparentTemperature: -10,
+    relativeHumidity: 80,
+    precipitation: snowfall > 0 ? 2 : 0,
+    rain: 0,
+    snowfall,
+    precipitationProbability: snowfall > 0 ? 80 : 10,
+    weatherCode: snowfall > 0 ? 73 : 3,
+    windSpeed: 15,
+    windDirection: 270,
+    windGusts: 25,
+    freezingLevelHeight: 1500,
+  };
+}
+
+/** Generate 24 hourly entries for a date with snowfall in specific periods */
+function makeHourlyDay(date: string, amSnow: number, pmSnow: number, overnightSnow: number): HourlyMetrics[] {
+  const hours: HourlyMetrics[] = [];
+  for (let h = 0; h < 24; h++) {
+    const hStr = h.toString().padStart(2, '0');
+    let snow = 0;
+    if (h >= 6 && h < 12) snow = amSnow / 6;          // AM: spread across 6 hours
+    else if (h >= 12 && h < 18) snow = pmSnow / 6;     // PM: spread across 6 hours
+    else snow = overnightSnow / 12;                     // Overnight: 0-5 + 18-23 = 12 hours
+    hours.push(makeHourlyMetrics(`${date}T${hStr}:00`, snow));
+  }
+  return hours;
+}
+
+function renderTimeline(
+  recentDays: DailyMetrics[],
+  forecastDays: DailyMetrics[],
+  forecastHourly?: HourlyMetrics[],
+) {
   return render(
     <UnitsProvider>
       <TimezoneProvider>
-        <SnowTimeline recentDays={recentDays} forecastDays={forecastDays} />
+        <SnowTimeline recentDays={recentDays} forecastDays={forecastDays} forecastHourly={forecastHourly} />
       </TimezoneProvider>
     </UnitsProvider>,
   );
@@ -104,7 +140,7 @@ describe('SnowTimeline', () => {
     expect(futureBars.length).toBe(6);
   });
 
-  it('renders today bar with today style when snowfall > 0', () => {
+  it('renders today bar with today style when snowfall > 0 (no hourly data)', () => {
     const { container } = renderTimeline(recentDays, forecastDays);
     const todayBar = container.querySelector('.snow-timeline__bar--today');
     expect(todayBar).toBeInTheDocument();
@@ -139,5 +175,98 @@ describe('SnowTimeline', () => {
     const { container } = renderTimeline(extraPast, forecastDays);
     const pastBars = container.querySelectorAll('.snow-timeline__bar--past');
     expect(pastBars.length).toBe(7);
+  });
+
+  describe('AM/PM/Overnight period sub-bars', () => {
+    // Build hourly data for the forecast days with specific period snow
+    const forecastHourly = [
+      // Today (2025-01-15): doesn't affect future bars
+      ...makeHourlyDay('2025-01-15', 3, 4, 3),
+      // 2025-01-16: 6cm AM, 6cm PM, 3cm overnight = 15cm total
+      ...makeHourlyDay('2025-01-16', 6, 6, 3),
+      // 2025-01-17: no snow
+      ...makeHourlyDay('2025-01-17', 0, 0, 0),
+      // 2025-01-18: 0 AM, 5 PM, 0 overnight = 5cm total
+      ...makeHourlyDay('2025-01-18', 0, 5, 0),
+      // 2025-01-19: 10 AM, 0 PM, 10 overnight = 20cm total
+      ...makeHourlyDay('2025-01-19', 10, 0, 10),
+      // 2025-01-20: no snow
+      ...makeHourlyDay('2025-01-20', 0, 0, 0),
+      // 2025-01-21: 3cm in AM only
+      ...makeHourlyDay('2025-01-21', 3, 0, 0),
+    ];
+
+    it('renders AM/PM/Overnight sub-bars for today + future days with hourly data', () => {
+      const { container } = renderTimeline(recentDays, forecastDays, forecastHourly);
+      const amBars = container.querySelectorAll('.snow-timeline__bar--am');
+      const pmBars = container.querySelectorAll('.snow-timeline__bar--pm');
+      const overnightBars = container.querySelectorAll('.snow-timeline__bar--overnight');
+      // Days with snow: today (2025-01-15) + 2025-01-16, 2025-01-18, 2025-01-19, 2025-01-21 = 5 days
+      expect(amBars.length).toBe(5);
+      expect(pmBars.length).toBe(5);
+      expect(overnightBars.length).toBe(5);
+    });
+
+    it('does not render old-style future bars when period data is present', () => {
+      const { container } = renderTimeline(recentDays, forecastDays, forecastHourly);
+      // Days with zero snow across all periods still get old-style bar
+      const futureBars = container.querySelectorAll('.snow-timeline__bar--future');
+      // 2025-01-17 and 2025-01-20 have 0 snow everywhere → old-style bar
+      expect(futureBars.length).toBe(2);
+    });
+
+    it('shows period tooltips with Morning/Afternoon/Overnight labels', () => {
+      const { container } = renderTimeline(recentDays, forecastDays, forecastHourly);
+      const amBar = container.querySelector('.snow-timeline__bar--am');
+      expect(amBar).toBeInTheDocument();
+      expect(amBar!.getAttribute('title')).toContain('Morning snow');
+      const pmBar = container.querySelector('.snow-timeline__bar--pm');
+      expect(pmBar!.getAttribute('title')).toContain('Afternoon snow');
+      const nightBar = container.querySelector('.snow-timeline__bar--overnight');
+      expect(nightBar!.getAttribute('title')).toContain('Overnight snow');
+    });
+
+    it('uses periods track layout for days with snow', () => {
+      const { container } = renderTimeline(recentDays, forecastDays, forecastHourly);
+      const periodsTracks = container.querySelectorAll('.snow-timeline__bar-track--periods');
+      expect(periodsTracks.length).toBe(5); // today + 4 future days with snow in at least one period
+    });
+
+    it('renders today bar with period sub-bars when hourly data present', () => {
+      const { container } = renderTimeline(recentDays, forecastDays, forecastHourly);
+      const todaySection = container.querySelector('.snow-timeline__today');
+      expect(todaySection).toBeInTheDocument();
+      // Should have period track with today highlight border
+      const todayPeriodTrack = todaySection!.querySelector('.snow-timeline__bar-track--today');
+      expect(todayPeriodTrack).toBeInTheDocument();
+      // Should NOT have old-style single today bar
+      const oldTodayBar = todaySection!.querySelector('.snow-timeline__bar--today');
+      expect(oldTodayBar).not.toBeInTheDocument();
+    });
+
+    it('today bar falls back to single bar when no hourly data', () => {
+      const { container } = renderTimeline(recentDays, forecastDays);
+      const todaySection = container.querySelector('.snow-timeline__today');
+      const oldTodayBar = todaySection!.querySelector('.snow-timeline__bar--today');
+      expect(oldTodayBar).toBeInTheDocument();
+      const todayPeriodTrack = todaySection!.querySelector('.snow-timeline__bar-track--today');
+      expect(todayPeriodTrack).not.toBeInTheDocument();
+    });
+
+    it('falls back to single bars when no forecastHourly', () => {
+      const { container } = renderTimeline(recentDays, forecastDays);
+      const futureBars = container.querySelectorAll('.snow-timeline__bar--future');
+      expect(futureBars.length).toBe(6);
+      const todayBar = container.querySelector('.snow-timeline__bar--today');
+      expect(todayBar).toBeInTheDocument();
+      const amBars = container.querySelectorAll('.snow-timeline__bar--am');
+      expect(amBars.length).toBe(0);
+    });
+
+    it('past bars remain unchanged with period data present', () => {
+      const { container } = renderTimeline(recentDays, forecastDays, forecastHourly);
+      const pastBars = container.querySelectorAll('.snow-timeline__bar--past');
+      expect(pastBars.length).toBe(7);
+    });
   });
 });

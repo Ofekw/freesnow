@@ -207,6 +207,7 @@ export function ResortPage() {
           <SnowTimeline
             recentDays={recentDays}
             forecastDays={bandData.daily}
+            forecastHourly={bandData.hourly}
           />
         </section>
       )}

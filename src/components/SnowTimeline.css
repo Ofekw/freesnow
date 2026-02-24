@@ -123,6 +123,46 @@
   box-shadow: 0 0 8px rgba(56, 189, 248, 0.2);
 }
 
+/* ── Period sub-bars (AM / PM / Overnight) ──────── */
+
+.snow-timeline__bar-track--periods {
+  flex-direction: row;
+  align-items: flex-end;
+  gap: 1px;
+}
+
+.snow-timeline__bar-track--today {
+  border: 1px solid rgba(56, 189, 248, 0.4);
+  border-radius: 4px;
+  padding: 0 1px;
+}
+
+.snow-timeline__bar--am,
+.snow-timeline__bar--pm,
+.snow-timeline__bar--overnight {
+  flex: 1;
+  min-width: 4px;
+  max-width: 10px;
+  border-radius: 2px 2px 0 0;
+  transition: height 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+  cursor: default;
+}
+
+.snow-timeline__bar--am {
+  background: linear-gradient(to top, rgba(251, 191, 36, 0.55), rgba(251, 191, 36, 0.9));
+  box-shadow: 0 0 6px rgba(251, 191, 36, 0.15);
+}
+
+.snow-timeline__bar--pm {
+  background: linear-gradient(to top, rgba(56, 189, 248, 0.6), rgba(56, 189, 248, 0.95));
+  box-shadow: 0 0 6px rgba(56, 189, 248, 0.15);
+}
+
+.snow-timeline__bar--overnight {
+  background: linear-gradient(to top, rgba(139, 92, 246, 0.55), rgba(139, 92, 246, 0.9));
+  box-shadow: 0 0 6px rgba(139, 92, 246, 0.15);
+}
+
 .snow-timeline__bar-label {
   font-size: 0.65rem;
   font-weight: 600;
