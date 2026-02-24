@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import {
   Snowflake, BarChart3, Clock, Sun, Thermometer,
@@ -33,6 +33,21 @@ export function ResortPage() {
   const { tz, fmtDate } = useTimezone();
   const [band, setBand] = useState<ElevationBand>('mid');
   const [selectedDayIdx, setSelectedDayIdx] = useState(0);
+  const [lastRefreshed, setLastRefreshed] = useState<Date | null>(null);
+  const prevFetchedAtRef = useRef<string | undefined>(undefined);
+
+  // Track when forecast data arrives (keyed on fetchedAt to avoid re-runs)
+  useEffect(() => {
+    const fetchedAt = forecast?.fetchedAt;
+    if (fetchedAt && fetchedAt !== prevFetchedAtRef.current) {
+      prevFetchedAtRef.current = fetchedAt;
+      setLastRefreshed(new Date());
+    }
+  }, [forecast?.fetchedAt]);
+
+  const handleRefresh = useCallback(() => {
+    refetch();
+  }, [refetch]);
 
   // Recent 14-day snowfall via forecast endpoint's past_days (no archive lag)
   const [recentDays, setRecentDays] = useState<DailyMetrics[]>([]);
@@ -55,7 +70,7 @@ export function ResortPage() {
   }, [resort, tz, band]);
 
   // Reset selected day when forecast data is refetched (not on band change)
-  useEffect(() => { setSelectedDayIdx(0); }, [forecast]);
+  useEffect(() => { setSelectedDayIdx(0); }, [forecast?.fetchedAt]);
 
   const bandData: BandForecast | undefined = forecast?.[band];
 
@@ -107,7 +122,7 @@ export function ResortPage() {
     <div className="resort-page">
       {/* Header */}
       <header className="resort-page__header">
-        <div>
+        <div className="resort-page__header-left">
           <Link to="/" className="resort-page__back">← All Resorts</Link>
           <div className="resort-page__title-row">
             <h1 className="resort-page__name">{resort.name}</h1>
@@ -130,6 +145,16 @@ export function ResortPage() {
               </>
             )}
           </p>
+        </div>
+        <div className="resort-page__header-right">
+          <button className="resort-page__refresh" onClick={handleRefresh} disabled={loading}>
+            {loading ? 'Loading…' : <><RefreshCw size={14} /> Refresh</>}
+          </button>
+          {lastRefreshed && (
+            <span className="resort-page__last-refreshed">
+              {fmtDate(lastRefreshed.toISOString(), { hour: 'numeric', minute: '2-digit' })}
+            </span>
+          )}
         </div>
       </header>
 
@@ -186,16 +211,13 @@ export function ResortPage() {
         </section>
       )}
 
-      {/* Band toggle + refresh */}
+      {/* Band toggle */}
       <div className="resort-page__toggle-row">
         <ElevationToggle
           value={band}
           onChange={setBand}
           elevations={resort.elevation}
         />
-        <button className="resort-page__refresh" onClick={refetch} disabled={loading}>
-          {loading ? 'Loading…' : <><RefreshCw size={14} /> Refresh</>}
-        </button>
       </div>
 
       {bandData && (

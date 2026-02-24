@@ -8,8 +8,21 @@
   justify-content: space-between;
   align-items: flex-start;
   gap: var(--space-md);
-  padding-right: 180px;
   animation: fadeInUp 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.resort-page__header-left {
+  flex: 1;
+  min-width: 0;
+}
+
+.resort-page__header-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  flex-shrink: 0;
+  padding-top: 1.4rem; /* align with the h1 baseline (below back link) */
 }
 
 .resort-page__title-row {
@@ -121,6 +134,13 @@
 }
 .resort-page__refresh:disabled {
   opacity: 0.5;
+}
+
+.resort-page__last-refreshed {
+  font-size: 0.7rem;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  opacity: 0.7;
 }
 
 /* ── Snowfall Section ───────────────────────────── */
@@ -333,7 +353,13 @@
 
 @media (max-width: 640px) {
   .resort-page__header {
-    padding-right: 140px;
+    flex-wrap: wrap;
+  }
+  .resort-page__header-right {
+    padding-top: 0;
+    flex-direction: row;
+    align-items: center;
+    gap: var(--space-sm);
   }
   .resort-page__name {
     font-size: 1.3rem;
