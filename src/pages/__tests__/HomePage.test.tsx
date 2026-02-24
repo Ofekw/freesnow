@@ -71,4 +71,44 @@ describe('HomePage', () => {
     renderWithProviders(<HomePage />);
     expect(screen.getByLabelText('Search resorts')).toBeInTheDocument();
   });
+
+  it('shows easter egg when searching for "Ofek"', async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<HomePage />);
+
+    const search = screen.getByPlaceholderText('Search resorts…');
+    await user.type(search, 'Ofek');
+
+    expect(screen.getByTestId('easter-egg')).toBeInTheDocument();
+  });
+
+  it('shows easter egg when searching for "ofek" (lowercase)', async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<HomePage />);
+
+    const search = screen.getByPlaceholderText('Search resorts…');
+    await user.type(search, 'ofek');
+
+    expect(screen.getByTestId('easter-egg')).toBeInTheDocument();
+  });
+
+  it('shows easter egg when searching for "OFEK" (uppercase)', async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<HomePage />);
+
+    const search = screen.getByPlaceholderText('Search resorts…');
+    await user.type(search, 'OFEK');
+
+    expect(screen.getByTestId('easter-egg')).toBeInTheDocument();
+  });
+
+  it('does not show easter egg for partial matches', async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<HomePage />);
+
+    const search = screen.getByPlaceholderText('Search resorts…');
+    await user.type(search, 'Ofe');
+
+    expect(screen.queryByTestId('easter-egg')).not.toBeInTheDocument();
+  });
 });

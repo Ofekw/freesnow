@@ -10,6 +10,7 @@ export function HomePage() {
   const [query, setQuery] = useState('');
   const { favorites, toggle, isFav } = useFavorites();
 
+  const isEasterEgg = query.toLowerCase() === 'ofek';
   const filtered = useMemo(() => searchResorts(query), [query]);
 
   const favoriteResorts = useMemo(
@@ -85,6 +86,17 @@ export function HomePage() {
           </div>
         </section>
       ))}
+
+      {/* Easter Egg: Show spinning image when user searches for "Ofek" */}
+      {isEasterEgg && (
+        <div className="home__easter-egg" data-testid="easter-egg">
+          <img
+            src="https://github.com/user-attachments/assets/1e0bab4c-6ead-4f02-9256-7e21fef78eb9"
+            alt="Easter egg"
+            className="home__easter-egg-image"
+          />
+        </div>
+      )}
     </div>
   );
 }
