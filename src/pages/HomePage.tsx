@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Snowflake, Star } from 'lucide-react';
 import { searchResorts, RESORTS, getResortBySlug } from '@/data/resorts';
 import { useFavorites } from '@/hooks/useFavorites';
@@ -12,6 +12,19 @@ export function HomePage() {
 
   const isEasterEgg = query.toLowerCase() === 'ofek';
   const filtered = useMemo(() => searchResorts(query), [query]);
+
+  // Handle Escape key to dismiss easter egg
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isEasterEgg) {
+        setQuery('');
+      }
+    };
+    if (isEasterEgg) {
+      document.addEventListener('keydown', handleEscape);
+      return () => document.removeEventListener('keydown', handleEscape);
+    }
+  }, [isEasterEgg]);
 
   const favoriteResorts = useMemo(
     () =>
@@ -89,7 +102,15 @@ export function HomePage() {
 
       {/* Easter Egg: Show spinning image when user searches for "Ofek" */}
       {isEasterEgg && (
-        <div className="home__easter-egg" data-testid="easter-egg">
+        <div
+          className="home__easter-egg"
+          data-testid="easter-egg"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Easter egg overlay"
+          onClick={() => setQuery('')}
+          onKeyDown={(e) => e.key === 'Enter' && setQuery('')}
+        >
           <img
             src="https://github.com/user-attachments/assets/1e0bab4c-6ead-4f02-9256-7e21fef78eb9"
             alt="Easter egg"
