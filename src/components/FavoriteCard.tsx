@@ -5,6 +5,7 @@ import { WeatherIcon } from '@/components/icons';
 import type { Resort, DailyMetrics, HourlyMetrics } from '@/types';
 import { fetchForecast } from '@/data/openmeteo';
 import { weatherDescription, fmtTemp, fmtSnow, fmtElevation } from '@/utils/weather';
+import { todayIsoInTimezone } from '@/utils/dateKey';
 import { useUnits } from '@/context/UnitsContext';
 import { useTimezone } from '@/context/TimezoneContext';
 import { MiniSnowTimeline } from '@/components/MiniSnowTimeline';
@@ -49,7 +50,7 @@ export function FavoriteCard({ resort, onToggleFavorite }: Props) {
         if (cancelled) return;
 
         const dailyDays = forecastData?.daily ?? [];
-        const today = new Date().toISOString().slice(0, 10);
+        const today = todayIsoInTimezone(tz);
 
         // Split into past and future days (ISO date strings can be compared lexicographically)
         const pastDays = dailyDays.filter((d) => d.date < today);

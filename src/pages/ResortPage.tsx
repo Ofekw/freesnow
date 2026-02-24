@@ -19,6 +19,7 @@ import { RecentSnowChart } from '@/components/charts/RecentSnowChart';
 import { FreezingLevelChart } from '@/components/charts/FreezingLevelChart';
 import { UVIndexChart } from '@/components/charts/UVIndexChart';
 import { weatherDescription, fmtTemp, fmtElevation, fmtSnow, cmToIn } from '@/utils/weather';
+import { todayIsoInTimezone } from '@/utils/dateKey';
 import { useUnits } from '@/context/UnitsContext';
 import { useTimezone } from '@/context/TimezoneContext';
 import type { ElevationBand, BandForecast, DailyMetrics } from '@/types';
@@ -60,7 +61,7 @@ export function ResortPage() {
     fetchForecast(resort.lat, resort.lon, resort.elevation[band], band, 1, 14, tz)
       .then((result) => {
         if (!cancelled) {
-          const today = new Date().toISOString().slice(0, 10);
+          const today = todayIsoInTimezone(tz);
           setRecentDays(result.daily.filter((d) => d.date < today));
         }
       })
