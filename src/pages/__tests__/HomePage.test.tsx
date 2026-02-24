@@ -66,7 +66,7 @@ describe('HomePage', () => {
 
   it('does not show favorites section when none favorited', () => {
     renderWithProviders(<HomePage />);
-    expect(screen.queryByText('Favourites')).not.toBeInTheDocument();
+    expect(screen.queryByText('Favorites')).not.toBeInTheDocument();
   });
 
   it('search has aria-label', () => {

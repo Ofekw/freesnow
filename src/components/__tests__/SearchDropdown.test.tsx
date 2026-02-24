@@ -1,10 +1,15 @@
-import { describe, it, expect, beforeEach } from 'bun:test';
+import { describe, it, expect, beforeEach, mock } from 'bun:test';
 import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { SearchDropdown } from '@/components/SearchDropdown';
 import { renderWithProviders } from '@/test/test-utils';
 
 let currentQuery = '';
+const favSlugs = new Set<string>();
+const mockToggle = mock((slug: string) => {
+  if (favSlugs.has(slug)) favSlugs.delete(slug);
+  else favSlugs.add(slug);
+});
 
 function renderDropdown(initialQuery = '') {
   currentQuery = initialQuery;
@@ -12,13 +17,20 @@ function renderDropdown(initialQuery = '') {
     currentQuery = q;
   }
   const result = renderWithProviders(
-    <SearchDropdown query={currentQuery} onQueryChange={onChange} />,
+    <SearchDropdown
+      query={currentQuery}
+      onQueryChange={onChange}
+      isFav={(slug) => favSlugs.has(slug)}
+      onToggleFavorite={mockToggle}
+    />,
   );
   return result;
 }
 
 beforeEach(() => {
   currentQuery = '';
+  favSlugs.clear();
+  mockToggle.mockClear();
 });
 
 describe('SearchDropdown', () => {
@@ -108,5 +120,32 @@ describe('SearchDropdown', () => {
       const options = within(panel).queryAllByRole('option');
       expect(options.length).toBeLessThanOrEqual(8);
     }
+  });
+
+  it('shows star buttons on each result', async () => {
+    const user = userEvent.setup();
+    renderDropdown('Vail');
+    await user.click(screen.getByRole('combobox'));
+    const favButtons = screen.getAllByTitle('Add to favorites');
+    expect(favButtons.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('calls onToggleFavorite when star is clicked', async () => {
+    const user = userEvent.setup();
+    renderDropdown('Vail');
+    await user.click(screen.getByRole('combobox'));
+    const favButton = screen.getAllByTitle('Add to favorites')[0];
+    await user.click(favButton);
+    expect(mockToggle).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not navigate when star is clicked', async () => {
+    const user = userEvent.setup();
+    renderDropdown('Vail');
+    await user.click(screen.getByRole('combobox'));
+    const favButton = screen.getAllByTitle('Add to favorites')[0];
+    await user.click(favButton);
+    // Dropdown should still be open (didn't navigate away)
+    expect(screen.getByRole('listbox')).toBeInTheDocument();
   });
 });

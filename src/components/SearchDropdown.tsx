@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Mountain } from 'lucide-react';
+import { Search, Mountain, Star } from 'lucide-react';
 import type { Resort } from '@/types';
 import { searchResorts, RESORTS } from '@/data/resorts';
 import './SearchDropdown.css';
@@ -10,9 +10,11 @@ const MAX_RESULTS = 8;
 interface Props {
   query: string;
   onQueryChange: (q: string) => void;
+  isFav: (slug: string) => boolean;
+  onToggleFavorite: (slug: string) => void;
 }
 
-export function SearchDropdown({ query, onQueryChange }: Props) {
+export function SearchDropdown({ query, onQueryChange, isFav, onToggleFavorite }: Props) {
   const [open, setOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -115,6 +117,17 @@ export function SearchDropdown({ query, onQueryChange }: Props) {
                     <span className="search-dropdown__item-name">{resort.name}</span>
                     <span className="search-dropdown__item-region">{resort.region}, {resort.country}</span>
                   </div>
+                  <button
+                    className={`search-dropdown__fav ${isFav(resort.slug) ? 'active' : ''}`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onToggleFavorite(resort.slug);
+                    }}
+                    aria-label={isFav(resort.slug) ? `Remove ${resort.name} from favorites` : `Add ${resort.name} to favorites`}
+                    title={isFav(resort.slug) ? 'Remove from favorites' : 'Add to favorites'}
+                  >
+                    <Star size={16} fill={isFav(resort.slug) ? 'currentColor' : 'none'} />
+                  </button>
                 </div>
               ))}
               {totalMatches > MAX_RESULTS && (

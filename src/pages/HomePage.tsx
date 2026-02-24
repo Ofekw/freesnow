@@ -41,13 +41,13 @@ export function HomePage() {
         <p className="home__subtitle">
           Free &amp; open-source ski resort forecasts for North America
         </p>
-        <SearchDropdown query={query} onQueryChange={setQuery} />
+        <SearchDropdown query={query} onQueryChange={setQuery} isFav={isFav} onToggleFavorite={toggle} />
       </section>
 
       {/* Favourites section — only visible when at least one resort is favourited */}
       {favoriteResorts.length > 0 && (
         <section className="home__region home__favorites">
-          <h2 className="home__region-title"><Star size={16} fill="currentColor" className="home__fav-icon" /> Favourites</h2>
+          <h2 className="home__region-title"><Star size={16} fill="currentColor" className="home__fav-icon" /> Favorites</h2>
           <div className="home__grid">
             {favoriteResorts.map((r) => (
               <FavoriteCard

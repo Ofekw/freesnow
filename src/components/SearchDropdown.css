@@ -116,6 +116,28 @@
   color: var(--color-text-muted);
 }
 
+.search-dropdown__fav {
+  flex-shrink: 0;
+  margin-left: auto;
+  background: none;
+  border: none;
+  padding: 6px;
+  cursor: pointer;
+  color: var(--color-text-muted);
+  border-radius: var(--radius-sm);
+  transition: color 0.15s, transform 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.search-dropdown__fav:hover {
+  color: var(--color-warning);
+  transform: scale(1.15);
+}
+.search-dropdown__fav.active {
+  color: var(--color-warning);
+}
+
 .search-dropdown__empty {
   padding: var(--space-md);
   text-align: center;
