@@ -66,10 +66,30 @@ export function cmToIn(cm: number): number {
   return cm / 2.54;
 }
 
+/** mm → inches conversion factor */
+export const MM_PER_INCH = 25.4;
+
+/** mm → cm conversion factor */
+export const MM_PER_CM = 10;
+
 /** Format snowfall for display */
 export function fmtSnow(cm: number, unit: 'in' | 'cm' = 'in'): string {
   if (unit === 'in') {
     return `${cmToIn(cm).toFixed(1)}"`;
   }
   return `${cm.toFixed(1)}cm`;
+}
+
+/**
+ * Calculate rain dot rating (0-3 dots) based on rain amount in inches
+ * 0 dots: no rain
+ * 1 dot: 0" to 0.1"
+ * 2 dots: 0.1" to 0.5"
+ * 3 dots: > 0.5"
+ */
+export function getRainDotRating(rainInches: number): number {
+  if (rainInches <= 0) return 0;
+  if (rainInches <= 0.1) return 1;
+  if (rainInches <= 0.5) return 2;
+  return 3;
 }

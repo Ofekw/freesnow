@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import type { EChartsOption } from 'echarts';
 import type { HourlyMetrics } from '@/types';
-import { cmToIn } from '@/utils/weather';
+import { cmToIn, getRainDotRating, MM_PER_INCH, MM_PER_CM } from '@/utils/weather';
 import { useUnits } from '@/context/UnitsContext';
 import { useTimezone } from '@/context/TimezoneContext';
 import { BaseChart } from './BaseChart';
@@ -34,8 +34,12 @@ export function HourlyDetailChart({ hourly }: Props) {
     const snowData = hourly.map((h) =>
       isImperial ? +cmToIn(h.snowfall).toFixed(2) : +h.snowfall.toFixed(1),
     );
-    const rainData = hourly.map((h) =>
-      isImperial ? +(h.rain / 25.4).toFixed(2) : +(h.rain / 10).toFixed(2),
+    // Scale rain by 1/6 for hourly as per requirements
+    const rainTotals = hourly.map((h) =>
+      isImperial ? h.rain / MM_PER_INCH : h.rain / MM_PER_CM,
+    );
+    const rainDotsData = hourly.map((_, index) =>
+      getRainDotRating(rainTotals[index]! / 6),
     );
     const tempData = hourly.map((h) =>
       isImperial ? Math.round(h.temperature * 9 / 5 + 32) : Math.round(h.temperature),
@@ -55,9 +59,32 @@ export function HourlyDetailChart({ hourly }: Props) {
     const windLabel = isImperial ? 'mph' : 'km/h';
 
     return {
-      tooltip: makeTooltip(),
+      tooltip: {
+        ...makeTooltip(),
+        formatter: (params: any) => {
+          if (!Array.isArray(params)) return '';
+          
+          const rainUnit = isImperial ? 'in' : 'cm';
+          const lines = params
+            .map((p: any) => {
+              const colorCircle = `<span style="display:inline-block;margin-right:4px;width:8px;height:8px;border-radius:50%;background-color:${p.color};"></span>`;
+              
+              // Special handling for rain series
+              if (p.seriesName === `Rain (0-3 rating)`) {
+                const rainTotal = rainTotals[p.dataIndex] || 0;
+                const rainFormatted = rainTotal.toFixed(isImperial ? 2 : 1);
+                return `${colorCircle}Rain (${rainUnit}): ${rainFormatted}`;
+              }
+              // Default formatting for other series
+              return `${colorCircle}${p.seriesName}: ${p.value}`;
+            })
+            .filter(Boolean);
+          
+          return lines.join('<br/>');
+        },
+      },
       legend: makeLegend(
-        [`Snow (${precipLabel})`, `Rain (${precipLabel})`, `Temp ${tempLabel}`, `Feels ${tempLabel}`, `Wind (${windLabel})`, `Gusts (${windLabel})`],
+        [`Snow (${precipLabel})`, `Rain (0-3 rating)`, `Temp ${tempLabel}`, `Feels ${tempLabel}`, `Wind (${windLabel})`, `Gusts (${windLabel})`],
         { bottom: 24 },
       ),
       grid: makeGrid({ bottom: 84, right: 56 }),
@@ -82,10 +109,29 @@ export function HourlyDetailChart({ hourly }: Props) {
       ],
       series: [
         makeBarSeries(`Snow (${precipLabel})`, snowData, COLORS.snow, { yAxisIndex: 0 }),
-        makeBarSeries(`Rain (${precipLabel})`, rainData, COLORS.rain, {
+        // Rain dots as pictorial bar with custom rendering
+        {
+          name: `Rain (0-3 rating)`,
+          type: 'pictorialBar',
+          data: rainDotsData,
           yAxisIndex: 0,
-          itemStyle: { color: COLORS.rain, borderRadius: [3, 3, 0, 0], opacity: 0.75 },
-        }),
+          symbol: 'circle',
+          symbolSize: [5, 5],
+          symbolRepeat: true,
+          symbolMargin: 1.5,
+          symbolClip: true,
+          symbolPosition: 'start',
+          itemStyle: {
+            color: COLORS.rain,
+          },
+          emphasis: {
+            itemStyle: {
+              color: COLORS.rain,
+              opacity: 1,
+            },
+          },
+          z: 10, // Render on top of snow bars
+        },
         makeLineSeries(`Temp ${tempLabel}`, tempData, COLORS.tempHigh, { yAxisIndex: 1 }),
         makeDashedLineSeries(`Feels ${tempLabel}`, feelsData, COLORS.tempHigh, { yAxisIndex: 1 }),
         makeLineSeries(`Wind (${windLabel})`, windData, COLORS.wind, {
