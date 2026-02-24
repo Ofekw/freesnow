@@ -4,6 +4,7 @@ import { searchResorts, RESORTS, getResortBySlug } from '@/data/resorts';
 import { useFavorites } from '@/hooks/useFavorites';
 import { ResortCard } from '@/components/ResortCard';
 import { FavoriteCard } from '@/components/FavoriteCard';
+import { SearchDropdown } from '@/components/SearchDropdown';
 import './HomePage.css';
 
 export function HomePage() {
@@ -40,14 +41,7 @@ export function HomePage() {
         <p className="home__subtitle">
           Free &amp; open-source ski resort forecasts for North America
         </p>
-        <input
-          className="home__search"
-          type="search"
-          placeholder="Search resorts…"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          aria-label="Search resorts"
-        />
+        <SearchDropdown query={query} onQueryChange={setQuery} />
       </section>
 
       {/* Favourites section — only visible when at least one resort is favourited */}

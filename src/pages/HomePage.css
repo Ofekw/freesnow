@@ -2,6 +2,8 @@
   text-align: center;
   padding: var(--space-2xl) 0 var(--space-lg);
   animation: fadeInUp 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+  position: relative;
+  z-index: 100;
 }
 
 .home__title {
@@ -23,18 +25,8 @@
   font-size: 1rem;
 }
 
-.home__search {
+.home__hero .search-dropdown {
   margin-top: var(--space-lg);
-  width: 100%;
-  max-width: 480px;
-  padding: var(--space-sm) var(--space-md);
-  font-size: 1rem;
-  border-radius: var(--radius-md);
-  transition: border-color 0.2s, box-shadow 0.2s;
-}
-.home__search:focus {
-  border-color: var(--color-accent);
-  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.15), 0 0 16px rgba(56, 189, 248, 0.1);
 }
 
 .home__empty {

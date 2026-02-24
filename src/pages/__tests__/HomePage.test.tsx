@@ -47,7 +47,8 @@ describe('HomePage', () => {
     const search = screen.getByPlaceholderText('Search resorts…');
     await user.type(search, 'Vail');
 
-    expect(screen.getByText('Vail')).toBeInTheDocument();
+    // Vail appears in both the dropdown and the resort card
+    expect(screen.getAllByText('Vail').length).toBeGreaterThanOrEqual(1);
     // Stowe should be filtered out
     expect(screen.queryByText('Stowe')).not.toBeInTheDocument();
   });
@@ -59,7 +60,8 @@ describe('HomePage', () => {
     const search = screen.getByPlaceholderText('Search resorts…');
     await user.type(search, 'zzznotaresort');
 
-    expect(screen.getByText(/no resorts match/i)).toBeInTheDocument();
+    // No-match message appears in both the dropdown and the main section
+    expect(screen.getAllByText(/no resorts match/i).length).toBeGreaterThanOrEqual(1);
   });
 
   it('does not show favorites section when none favorited', () => {

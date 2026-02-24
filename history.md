@@ -788,3 +788,21 @@ Gives users an at-a-glance snowfall trend for their favourited resorts directly 
 - `src/components/FavoriteCard.tsx` — Stores daily + hourly timeline data from forecast; renders MiniSnowTimeline
 - `src/components/__tests__/MiniSnowTimeline.test.tsx` — 14 new tests covering rendering, past/future bars, AM/PM/Overnight period splits, edge cases
 
+---
+
+## Search Dropdown for Home Page
+
+### What changed
+Replaced the plain search `<input>` on the Home Page with a `SearchDropdown` combobox component. When the user types, a floating dropdown panel appears directly below the search bar showing up to 8 matching resorts (name + region). Results are keyboard-navigable (Arrow keys + Enter) and clickable — selecting a result navigates straight to that resort's detail page. The dropdown includes a search icon, slide-in animation, scroll for overflow, and dismisses on Escape or outside click.
+
+### Why
+On mobile, the previous search-and-filter experience made it hard to see which resorts matched the query because the grid reflow was far below the input. The dropdown gives immediate, obvious visual feedback right under the user's thumb.
+
+### Key files affected
+- `src/components/SearchDropdown.tsx` — New combobox component (keyboard nav, ARIA roles, outside-click dismiss)
+- `src/components/SearchDropdown.css` — Dropdown panel styling (dark theme, slide-in animation, scrollbar, hover/active states)
+- `src/pages/HomePage.tsx` — Swapped raw `<input>` for `<SearchDropdown />`
+- `src/pages/HomePage.css` — Removed old `.home__search` styles, added spacing rule for the dropdown
+- `src/components/__tests__/SearchDropdown.test.tsx` — 9 new tests (rendering, ARIA, dropdown open/close, navigation, keyboard, max results)
+- `src/pages/__tests__/HomePage.test.tsx` — Updated 2 tests to handle duplicate text from dropdown + card
+
