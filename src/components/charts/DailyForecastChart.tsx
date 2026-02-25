@@ -68,18 +68,19 @@ export function DailyForecastChart({ daily, hourly }: Props) {
     let snowData: number[] = [];
 
     if (hasPeriods) {
-      amData = daily.map((d) => {
+      // Split all days at once to avoid redundant filtering
+      const allPeriods = daily.map((d) => {
         const periods = splitDayPeriods(d.date, hourly);
-        return toDisplay(periods.am);
+        return {
+          am: toDisplay(periods.am),
+          pm: toDisplay(periods.pm),
+          overnight: toDisplay(periods.overnight),
+        };
       });
-      pmData = daily.map((d) => {
-        const periods = splitDayPeriods(d.date, hourly);
-        return toDisplay(periods.pm);
-      });
-      overnightData = daily.map((d) => {
-        const periods = splitDayPeriods(d.date, hourly);
-        return toDisplay(periods.overnight);
-      });
+      
+      amData = allPeriods.map((p) => p.am);
+      pmData = allPeriods.map((p) => p.pm);
+      overnightData = allPeriods.map((p) => p.overnight);
     } else {
       snowData = daily.map((d) => toDisplay(d.snowfallSum));
     }
