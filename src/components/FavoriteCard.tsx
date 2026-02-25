@@ -62,7 +62,7 @@ export function FavoriteCard({ resort, onToggleFavorite }: Props) {
             resort.elevation.mid,
             'mid',
             models,
-            2,
+            5,
             14,
             tz,
           ),
@@ -118,7 +118,7 @@ export function FavoriteCard({ resort, onToggleFavorite }: Props) {
         // Tomorrow: second element in futureDays (first is today)
         const tomorrow = futureDays[1] ?? null;
 
-        // Mini timeline: yesterday + next 4 days total (today + next 3)
+        // Mini timeline: yesterday + today + next 3 future = 5 columns
         const timelinePast = pastDays.slice(-1);
         const timelineForecast = futureDays.slice(0, 4);
         const timelineHourly = futureData?.hourly ?? pastData?.hourly ?? [];

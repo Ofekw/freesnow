@@ -864,3 +864,17 @@ Prevents conflicting snowfall period totals between different snow visualization
 - `src/components/MiniSnowTimeline.css`
 - `src/components/__tests__/MiniSnowTimeline.test.tsx`
 
+---
+
+## FavoriteCard Past-Call Forecast Days Increase
+
+### What changed
+- Increased `forecastDays` in the FavoriteCard past-data API call from `2` to `5`, so that when the primary 14-day future call fails, the fallback still provides enough forecast days (today + 3 future) for a full 5-column mini timeline.
+
+### Why
+- Canadian resorts (using `gem_seamless` model) were intermittently seeing only 3 timeline columns (1 past + today + tomorrow) instead of 5, because the 14-day future fetch would fail and the past call only carried 2 forecast days as fallback.
+
+### Key files affected
+- `src/components/FavoriteCard.tsx` — past call `forecastDays` 2 → 5
+- `src/components/__tests__/FavoriteCard.test.tsx` — updated assertion to match new value
+
