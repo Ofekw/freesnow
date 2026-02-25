@@ -34,14 +34,6 @@ mock.module('@/data/openmeteo', () => ({
   fetchHistorical: mock(() => Promise.resolve([])),
 }));
 
-mock.module('@/hooks/useFavorites', () => ({
-  useFavorites: mock(() => ({
-    favorites: [],
-    toggle: mock(() => {}),
-    isFav: mock(() => false),
-  })),
-}));
-
 mock.module('@/hooks/useWeather', () => ({
   useForecast: mock(() => ({
     forecast: {
@@ -68,7 +60,6 @@ mock.module('@/components/charts/HourlyDetailChart', () => ({ HourlyDetailChart:
 mock.module('@/components/charts/HourlySnowChart', () => ({ HourlySnowChart: () => <div /> }));
 mock.module('@/components/charts/FreezingLevelChart', () => ({ FreezingLevelChart: () => <div /> }));
 mock.module('@/components/charts/UVIndexChart', () => ({ UVIndexChart: () => <div /> }));
-mock.module('@/components/SnowTimeline', () => ({ SnowTimeline: () => <div /> }));
 
 const { ResortPage } = await import('@/pages/ResortPage');
 
