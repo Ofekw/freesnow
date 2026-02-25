@@ -47,6 +47,8 @@ export function useSnowAlerts() {
   }, []);
 
   useEffect(() => {
+  try {
+    if (!favorites || !tz) return;
     const favoriteSlugs = favorites.map((f) => f.slug);
     void syncSnowAlertSettings({
       favoriteSlugs,
@@ -54,7 +56,10 @@ export function useSnowAlerts() {
       thresholdCm: SNOW_DAY_THRESHOLD_CM,
       enabled,
     });
-  }, [favorites, tz, enabled]);
+  } catch (err) {
+    console.error('Failed to sync snow alert settings:', err);
+  }
+}, [favorites, tz, enabled]);
 
   useEffect(() => {
     if (permission !== 'granted') return;
