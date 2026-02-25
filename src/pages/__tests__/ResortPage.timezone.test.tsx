@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, mock } from 'bun:test';
+import { describe, it, expect, beforeEach, afterAll, mock } from 'bun:test';
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Routes, Route, MemoryRouter } from 'react-router-dom';
@@ -36,6 +36,7 @@ mock.module('@/data/openmeteo', () => ({
 
 mock.module('@/hooks/useFavorites', () => ({
   useFavorites: mock(() => ({
+    favorites: [],
     toggle: mock(() => {}),
     isFav: mock(() => false),
   })),
@@ -159,6 +160,10 @@ beforeEach(() => {
   localStorage.setItem('pow_tz', 'UTC');
   fetchForecastMock.mockClear();
   todayIsoInTimezoneMock.mockClear();
+});
+
+afterAll(() => {
+  mock.restore();
 });
 
 describe('ResortPage timezone behavior', () => {

@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, mock } from 'bun:test';
+import { describe, it, expect, beforeEach, afterAll, mock } from 'bun:test';
 import { screen } from '@testing-library/react';
 import { Routes, Route } from 'react-router-dom';
 import { MemoryRouter } from 'react-router-dom';
@@ -98,6 +98,10 @@ const { ResortPage } = await import('@/pages/ResortPage');
 
 beforeEach(() => {
   localStorage.clear();
+});
+
+afterAll(() => {
+  mock.restore();
 });
 
 function renderResortPage(slug = 'vail-co') {
