@@ -162,6 +162,27 @@ describe('averageHourlyArrays', () => {
     const result = averageHourlyArrays([m1, m2, m3]);
     expect(result.weather_code[0]).toBe(71); // mode = 71
   });
+
+  it('skips null values from models with partial data (e.g. HRRR beyond 48h)', () => {
+    const gfs = makeHourly({
+      time: ['T00', 'T01', 'T02'],
+      temperature_2m: [-3, -4, -5],
+      precipitation: [1.0, 2.0, 3.0],
+    });
+    // Simulate HRRR returning null beyond its range
+    const hrrr = makeHourly({
+      time: ['T00', 'T01', 'T02'],
+      temperature_2m: [-5, -6, null as unknown as number],
+      precipitation: [0.8, 1.5, null as unknown as number],
+    });
+    const result = averageHourlyArrays([gfs, hrrr]);
+    // T00/T01: average of both models
+    expect(result.temperature_2m[0]).toBe(-4);   // mean(-3, -5)
+    expect(result.temperature_2m[1]).toBe(-5);   // mean(-4, -6)
+    // T02: only GFS contributes (HRRR null is skipped)
+    expect(result.temperature_2m[2]).toBe(-5);
+    expect(result.precipitation[2]).toBe(3.0);   // only GFS
+  });
 });
 
 /* ── averageDailyArrays ───────────────────────── */
@@ -219,6 +240,33 @@ describe('averageDailyArrays', () => {
     const result = averageDailyArrays([m1, m2, m3]);
     expect(result.precipitation_sum[0]).toBe(3); // median
   });
+
+  it('skips null values in daily fields (e.g. HRRR uv_index_max)', () => {
+    const gfs = makeDaily({
+      time: ['D1', 'D2'],
+      temperature_2m_max: [-2, -3],
+      uv_index_max: [3.5, 4.0],
+    });
+    const ecmwf = makeDaily({
+      time: ['D1', 'D2'],
+      temperature_2m_max: [-4, -5],
+      uv_index_max: [3.0, 3.8],
+    });
+    // HRRR: uv_index_max is always null, temp is null beyond 48h
+    const hrrr = makeDaily({
+      time: ['D1', 'D2'],
+      temperature_2m_max: [-6, null as unknown as number],
+      uv_index_max: [null as unknown as number, null as unknown as number],
+    });
+    const result = averageDailyArrays([gfs, ecmwf, hrrr]);
+    // D1 temp: mean of all 3 (HRRR has valid value)
+    expect(result.temperature_2m_max[0]).toBe(-4);   // mean(-2, -4, -6)
+    // D2 temp: only GFS + ECMWF (HRRR null skipped)
+    expect(result.temperature_2m_max[1]).toBe(-4);   // mean(-3, -5)
+    // UV: always from GFS + ECMWF only (HRRR null skipped)
+    expect(result.uv_index_max[0]).toBe(3.25);       // mean(3.5, 3.0)
+    expect(result.uv_index_max[1]).toBe(3.9);        // mean(4.0, 3.8)
+  });
 });
 
 /* ── blendWithNWS ──────────────────────────────── */
@@ -270,7 +318,7 @@ describe('blendWithNWS', () => {
 describe('modelsForCountry', () => {
   it('returns HRRR for US resorts', () => {
     const models = modelsForCountry('US');
-    expect(models).toContain('hrrr');
+    expect(models).toContain('ncep_hrrr_conus');
     expect(models).toContain('gfs_seamless');
     expect(models).toContain('ecmwf_ifs025');
   });
@@ -279,7 +327,7 @@ describe('modelsForCountry', () => {
     const models = modelsForCountry('CA');
     expect(models).toContain('gem_seamless');
     expect(models).toContain('gfs_seamless');
-    expect(models).not.toContain('hrrr');
+    expect(models).not.toContain('ncep_hrrr_conus');
   });
 
   it('returns basic models for other countries', () => {

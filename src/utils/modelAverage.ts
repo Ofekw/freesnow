@@ -35,6 +35,11 @@ function r2(n: number): number {
   return +n.toFixed(2);
 }
 
+/** Push value into array only if it's a finite number (skip null/undefined/NaN). */
+function pushNum(arr: number[], val: unknown): void {
+  if (typeof val === 'number' && Number.isFinite(val)) arr.push(val);
+}
+
 /* ── types mirroring the OMForecastResponse shapes ─ */
 /* We re-declare the inner structures so this module has no import dependency
    on openmeteo.ts and can be tested in isolation. */
@@ -143,19 +148,19 @@ export function averageHourlyArrays(models: RawHourly[]): RawHourly {
       const idx = modelTimeIndex[m]!.get(t);
       if (idx === undefined) continue;
       const model = models[m]!;
-      temps.push(model.temperature_2m[idx]!);
-      apparents.push(model.apparent_temperature[idx]!);
-      humidities.push(model.relative_humidity_2m[idx]!);
-      precips.push(model.precipitation[idx]!);
-      rains.push(model.rain[idx]!);
-      snowfalls.push(model.snowfall[idx]!);
-      precipProbs.push(model.precipitation_probability[idx]!);
-      wcodes.push(model.weather_code[idx]!);
-      winds.push(model.wind_speed_10m[idx]!);
-      windDirs.push(model.wind_direction_10m[idx]!);
-      gusts.push(model.wind_gusts_10m[idx]!);
-      freezingLevels.push(model.freezing_level_height[idx]!);
-      if (model.snow_depth?.[idx] !== undefined) {
+      pushNum(temps, model.temperature_2m[idx]);
+      pushNum(apparents, model.apparent_temperature[idx]);
+      pushNum(humidities, model.relative_humidity_2m[idx]);
+      pushNum(precips, model.precipitation[idx]);
+      pushNum(rains, model.rain[idx]);
+      pushNum(snowfalls, model.snowfall[idx]);
+      pushNum(precipProbs, model.precipitation_probability[idx]);
+      pushNum(wcodes, model.weather_code[idx]);
+      pushNum(winds, model.wind_speed_10m[idx]);
+      pushNum(windDirs, model.wind_direction_10m[idx]);
+      pushNum(gusts, model.wind_gusts_10m[idx]);
+      pushNum(freezingLevels, model.freezing_level_height[idx]);
+      if (model.snow_depth?.[idx] != null && typeof model.snow_depth[idx] === 'number') {
         snowDepths.push(model.snow_depth[idx]!);
       }
     }
@@ -239,18 +244,18 @@ export function averageDailyArrays(models: RawDaily[]): RawDaily {
       const idx = modelTimeIndex[m]!.get(t);
       if (idx === undefined) continue;
       const model = models[m]!;
-      wcodes.push(model.weather_code[idx]!);
-      tmaxs.push(model.temperature_2m_max[idx]!);
-      tmins.push(model.temperature_2m_min[idx]!);
-      atMaxs.push(model.apparent_temperature_max[idx]!);
-      atMins.push(model.apparent_temperature_min[idx]!);
-      uvs.push(model.uv_index_max[idx]!);
-      precipSums.push(model.precipitation_sum[idx]!);
-      rainSums.push(model.rain_sum[idx]!);
-      snowSums.push(model.snowfall_sum[idx]!);
-      ppMaxs.push(model.precipitation_probability_max[idx]!);
-      wsMaxs.push(model.wind_speed_10m_max[idx]!);
-      wgMaxs.push(model.wind_gusts_10m_max[idx]!);
+      pushNum(wcodes, model.weather_code[idx]);
+      pushNum(tmaxs, model.temperature_2m_max[idx]);
+      pushNum(tmins, model.temperature_2m_min[idx]);
+      pushNum(atMaxs, model.apparent_temperature_max[idx]);
+      pushNum(atMins, model.apparent_temperature_min[idx]);
+      pushNum(uvs, model.uv_index_max[idx]);
+      pushNum(precipSums, model.precipitation_sum[idx]);
+      pushNum(rainSums, model.rain_sum[idx]);
+      pushNum(snowSums, model.snowfall_sum[idx]);
+      pushNum(ppMaxs, model.precipitation_probability_max[idx]);
+      pushNum(wsMaxs, model.wind_speed_10m_max[idx]);
+      pushNum(wgMaxs, model.wind_gusts_10m_max[idx]);
     }
 
     out.weather_code.push(mode(wcodes));
@@ -349,7 +354,7 @@ function meanAngle(degrees: number[]): number {
 export function modelsForCountry(country: string): string[] {
   switch (country) {
     case 'US':
-      return ['gfs_seamless', 'ecmwf_ifs025', 'hrrr'];
+      return ['gfs_seamless', 'ecmwf_ifs025', 'ncep_hrrr_conus'];
     case 'CA':
       return ['gfs_seamless', 'ecmwf_ifs025', 'gem_seamless'];
     default:

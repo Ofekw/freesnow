@@ -864,3 +864,34 @@ Prevents conflicting snowfall period totals between different snow visualization
 - `src/components/MiniSnowTimeline.css`
 - `src/components/__tests__/MiniSnowTimeline.test.tsx`
 
+---
+
+## FavoriteCard Past-Call Forecast Days Increase
+
+### What changed
+- Increased `forecastDays` in the FavoriteCard past-data API call from `2` to `5`, so that when the primary 14-day future call fails, the fallback still provides enough forecast days (today + 3 future) for a full 5-column mini timeline.
+
+### Why
+- Canadian resorts (using `gem_seamless` model) were intermittently seeing only 3 timeline columns (1 past + today + tomorrow) instead of 5, because the 14-day future fetch would fail and the past call only carried 2 forecast days as fallback.
+
+### Key files affected
+- `src/components/FavoriteCard.tsx` — past call `forecastDays` 2 → 5
+- `src/components/__tests__/FavoriteCard.test.tsx` — updated assertion to match new value
+
+
+
+---
+
+## HRRR Model Name Update & Null-Safe Averaging
+
+### What changed
+- Updated Open-Meteo model name from `hrrr` to `ncep_hrrr_conus` in `modelsForCountry()` -- the old name was returning 400 errors.
+- Added null-safe value filtering in `averageHourlyArrays` and `averageDailyArrays`. The `ncep_hrrr_conus` model returns `null` for unsupported fields (e.g. `uv_index_max`) and for hours/days beyond its 48h forecast range. These nulls were leaking into averages and causing toFixed crashes.
+
+### Why
+- Open-Meteo renamed the HRRR model identifier, breaking all US resort forecasts with 400 errors.
+- After fixing the model name, the previously-failing HRRR model started returning data with null values that the averaging code did not handle, causing crashes on resort pages and Forecast unavailable on favorite cards.
+
+### Key files affected
+- `src/utils/modelAverage.ts` -- model name fix + pushNum null-filter helper
+- `src/utils/__tests__/modelAverage.test.ts` -- updated model name assertions + null-handling tests

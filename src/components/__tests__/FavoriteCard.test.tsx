@@ -98,12 +98,12 @@ afterAll(() => {
 });
 
 describe('FavoriteCard timezone behavior', () => {
-  it('requests a 2-day forecast on the past-data fetch as tomorrow fallback', async () => {
+  it('requests a 5-day forecast on the past-data fetch as fallback', async () => {
     renderFavoriteCardHarness();
     await screen.findByText('Tomorrow');
 
     const calledWithPastFallback = fetchMultiModelForecastMock.mock.calls.some(
-      (call) => call[5] === 2 && call[6] === 14,
+      (call) => call[5] === 5 && call[6] === 14,
     );
     expect(calledWithPastFallback).toBe(true);
   });
