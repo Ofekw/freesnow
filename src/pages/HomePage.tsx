@@ -107,7 +107,7 @@ export function HomePage() {
         >
           <img
             src="https://github.com/user-attachments/assets/1e0bab4c-6ead-4f02-9256-7e21fef78eb9"
-            alt="Easter egg"
+            alt="Ofek Snowflake"
             className="home__easter-egg-image"
           />
         </div>
