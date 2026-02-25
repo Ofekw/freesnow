@@ -3,6 +3,7 @@ import { render, screen } from '@testing-library/react';
 import { UnitsProvider } from '@/context/UnitsContext';
 import { TimezoneProvider } from '@/context/TimezoneContext';
 import { SnowTimeline } from '@/components/SnowTimeline';
+import { splitDayPeriods } from '@/components/snowTimelinePeriods';
 import type { DailyMetrics, HourlyMetrics } from '@/types';
 
 function makeDailyMetrics(date: string, snowfallSum: number): DailyMetrics {
@@ -94,6 +95,22 @@ beforeEach(() => {
 });
 
 describe('SnowTimeline', () => {
+  it('splits overnight as target-day evening plus next-day early morning', () => {
+    const hourly: HourlyMetrics[] = [
+      makeHourlyMetrics('2025-01-15T02:00', 10), // same-day early morning: should NOT count for 2025-01-15 overnight
+      makeHourlyMetrics('2025-01-15T07:00', 1),  // AM
+      makeHourlyMetrics('2025-01-15T13:00', 2), // PM
+      makeHourlyMetrics('2025-01-15T20:00', 3), // same-day evening: should count for overnight
+      makeHourlyMetrics('2025-01-16T01:00', 4), // next-day early morning: should count for overnight
+      makeHourlyMetrics('2025-01-16T08:00', 6), // next-day AM: should not count for 2025-01-15
+    ];
+
+    const periods = splitDayPeriods('2025-01-15', hourly);
+    expect(periods.am).toBe(1);
+    expect(periods.pm).toBe(2);
+    expect(periods.overnight).toBe(7);
+  });
+
   it('renders the component with accessible label', () => {
     renderTimeline(recentDays, forecastDays);
     expect(screen.getByRole('figure')).toBeInTheDocument();

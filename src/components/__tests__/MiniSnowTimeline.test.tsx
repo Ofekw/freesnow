@@ -179,10 +179,11 @@ describe('MiniSnowTimeline', () => {
       const amBars = container.querySelectorAll('.mini-timeline__bar--am');
       const pmBars = container.querySelectorAll('.mini-timeline__bar--pm');
       const overnightBars = container.querySelectorAll('.mini-timeline__bar--overnight');
-      // today + 2025-01-16 + 2025-01-18 = 3 days with period snow
-      expect(amBars.length).toBe(3);
-      expect(pmBars.length).toBe(3);
-      expect(overnightBars.length).toBe(3);
+      // Cross-date overnight can make the prior day non-zero from next-day 00-05 snowfall,
+      // so all four forecast days can render period bars in this fixture.
+      expect(amBars.length).toBe(4);
+      expect(pmBars.length).toBe(4);
+      expect(overnightBars.length).toBe(4);
     });
 
     it('renders today with period sub-bars and accent border', () => {
