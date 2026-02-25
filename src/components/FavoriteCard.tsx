@@ -3,7 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { Star } from 'lucide-react';
 import { WeatherIcon } from '@/components/icons';
 import type { Resort, DailyMetrics, HourlyMetrics } from '@/types';
-import { fetchForecast } from '@/data/openmeteo';
+import { fetchMultiModelForecast } from '@/data/openmeteo';
+import { fetchNWSSnowfall, nwsToSnowMap } from '@/data/nws';
+import { modelsForCountry, blendWithNWS } from '@/utils/modelAverage';
 import { weatherDescription, fmtTemp, fmtSnow, fmtElevation } from '@/utils/weather';
 import { todayIsoInTimezone } from '@/utils/dateKey';
 import { useUnits } from '@/context/UnitsContext';
@@ -41,15 +43,41 @@ export function FavoriteCard({ resort, onToggleFavorite }: Props) {
     async function load() {
       setLoading(true);
       try {
-        // Fetch forecast with 14 past days (avoids archive API lag)
-        // and 16 future days (for 14-day forecast plus buffer)
-        const forecastData = await fetchForecast(
-          resort.lat, resort.lon, resort.elevation.mid, 'mid', 16, 14, tz,
-        ).catch(() => null);
+        // Match ResortPage algorithm: country-aware multi-model forecast.
+        const models = modelsForCountry(resort.country);
+        const forecastData = await fetchMultiModelForecast(
+          resort.lat,
+          resort.lon,
+          resort.elevation.mid,
+          'mid',
+          models,
+          16,
+          14,
+          tz,
+        );
+
+        // US resorts: apply the same optional NWS blend used by useForecast.
+        if (resort.country === 'US') {
+          try {
+            const nwsDays = await fetchNWSSnowfall(resort.lat, resort.lon);
+            const nwsMap = nwsToSnowMap(nwsDays);
+            if (nwsMap.size > 0) {
+              const blended = blendWithNWS(forecastData.daily, nwsMap);
+              for (const day of forecastData.daily) {
+                const blendedValue = blended.get(day.date);
+                if (blendedValue !== undefined) {
+                  day.snowfallSum = blendedValue;
+                }
+              }
+            }
+          } catch {
+            // NWS is optional — continue with model-only data.
+          }
+        }
 
         if (cancelled) return;
 
-        const dailyDays = forecastData?.daily ?? [];
+        const dailyDays = forecastData.daily;
         const today = todayIsoInTimezone(tz);
 
         // Split into past and future days (ISO date strings can be compared lexicographically)
@@ -75,7 +103,7 @@ export function FavoriteCard({ resort, onToggleFavorite }: Props) {
         // Timeline data: yesterday (last past day) + today + next 3 future
         const timelinePast = pastDays.slice(-1); // just yesterday
         const timelineForecast = futureDays.slice(0, 4); // today + next 3
-        const timelineHourly = forecastData?.hourly ?? [];
+        const timelineHourly = forecastData.hourly;
 
         setSummary({ last14Snow, next7Snow, next14Snow, tomorrow, timelinePast, timelineForecast, timelineHourly });
       } catch {

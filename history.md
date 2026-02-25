@@ -825,3 +825,23 @@ Prevents conflicting snowfall period totals between different snow visualization
 ### Follow-up notes
 - All validation scripts pass after this alignment: `bun run lint`, `bun run build`, `bun run test`.
 
+---
+
+## Phase 18: Homepage Forecast Algorithm Parity
+
+### What changed
+- Updated `FavoriteCard` forecast loading to use `fetchMultiModelForecast` with `modelsForCountry(...)`, matching the ResortPage multi-model averaging pipeline.
+- Added optional US-only NWS snowfall blending on homepage cards via `fetchNWSSnowfall` + `nwsToSnowMap` + `blendWithNWS`, consistent with `useForecast`.
+- Updated `FavoriteCard` tests to mock the new data dependencies and restore module mocks after the suite to avoid cross-suite contamination.
+
+### Why
+- Homepage mini timeline and resort-page main timeline could show different snowfall totals for the same resort/day because FavoriteCard previously used a single-model fetch path.
+- This change aligns homepage snowfall numbers with the main forecast algorithm so values are consistent across surfaces.
+
+### Key files affected
+- `src/components/FavoriteCard.tsx`
+- `src/components/__tests__/FavoriteCard.test.tsx`
+
+### Follow-up notes
+- ResortPage still allows switching elevation bands; homepage cards remain mid-band only, so differences can still appear if users compare against non-mid selected bands.
+

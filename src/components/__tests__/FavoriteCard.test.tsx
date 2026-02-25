@@ -1,11 +1,11 @@
-import { describe, it, expect, beforeEach, mock } from 'bun:test';
+import { describe, it, expect, beforeEach, afterAll, mock } from 'bun:test';
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useTimezone } from '@/context/TimezoneContext';
 import { renderWithProviders } from '@/test/test-utils';
 import type { DailyMetrics, Resort } from '@/types';
 
-const fetchForecastMock = mock(() =>
+const fetchMultiModelForecastMock = mock(() =>
   Promise.resolve({
     band: 'mid' as const,
     elevation: 3050,
@@ -25,7 +25,9 @@ const todayIsoInTimezoneMock = mock((tz: string) => {
 });
 
 mock.module('@/data/openmeteo', () => ({
-  fetchForecast: fetchForecastMock,
+  fetchForecast: fetchMultiModelForecastMock,
+  fetchHistorical: mock(async () => []),
+  fetchMultiModelForecast: fetchMultiModelForecastMock,
 }));
 
 mock.module('@/utils/dateKey', () => ({
@@ -56,7 +58,7 @@ const resort: Resort = {
   slug: 'vail-co',
   name: 'Vail',
   region: 'Colorado',
-  country: 'US',
+  country: 'CA',
   lat: 39.6403,
   lon: -106.3742,
   elevation: { base: 2475, mid: 3050, top: 3527 },
@@ -80,8 +82,12 @@ function renderFavoriteCardHarness() {
 beforeEach(() => {
   localStorage.clear();
   localStorage.setItem('pow_tz', 'UTC');
-  fetchForecastMock.mockClear();
+  fetchMultiModelForecastMock.mockClear();
   todayIsoInTimezoneMock.mockClear();
+});
+
+afterAll(() => {
+  mock.restore();
 });
 
 describe('FavoriteCard timezone behavior', () => {
