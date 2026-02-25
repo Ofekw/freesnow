@@ -179,10 +179,11 @@ describe('MiniSnowTimeline', () => {
       const amBars = container.querySelectorAll('.mini-timeline__bar--am');
       const pmBars = container.querySelectorAll('.mini-timeline__bar--pm');
       const overnightBars = container.querySelectorAll('.mini-timeline__bar--overnight');
-      // today + 2025-01-16 + 2025-01-18 = 3 days with period snow
-      expect(amBars.length).toBe(3);
-      expect(pmBars.length).toBe(3);
-      expect(overnightBars.length).toBe(3);
+      // Cross-date overnight can make the prior day non-zero from next-day 00-05 snowfall,
+      // so all four forecast days can render period bars in this fixture.
+      expect(amBars.length).toBe(4);
+      expect(pmBars.length).toBe(4);
+      expect(overnightBars.length).toBe(4);
     });
 
     it('renders today with period sub-bars and accent border', () => {
@@ -208,6 +209,34 @@ describe('MiniSnowTimeline', () => {
       const { container } = renderMiniTimeline(pastDays, forecastDays, forecastHourly);
       const pastBars = container.querySelectorAll('.mini-timeline__bar--past');
       expect(pastBars).toHaveLength(1);
+    });
+  });
+
+  describe('Period legend', () => {
+    it('renders the legend with AM, PM, and Night labels', () => {
+      renderMiniTimeline(pastDays, forecastDays);
+      expect(screen.getByText('AM')).toBeInTheDocument();
+      expect(screen.getByText('PM')).toBeInTheDocument();
+      expect(screen.getByText('Night')).toBeInTheDocument();
+    });
+
+    it('renders color swatches for each period', () => {
+      const { container } = renderMiniTimeline(pastDays, forecastDays);
+      expect(container.querySelector('.mini-timeline__legend-swatch--am')).toBeInTheDocument();
+      expect(container.querySelector('.mini-timeline__legend-swatch--pm')).toBeInTheDocument();
+      expect(container.querySelector('.mini-timeline__legend-swatch--overnight')).toBeInTheDocument();
+    });
+
+    it('legend has aria-label', () => {
+      renderMiniTimeline(pastDays, forecastDays);
+      expect(screen.getByLabelText('Legend')).toBeInTheDocument();
+    });
+
+    it('legend items have hover tooltips explaining time ranges', () => {
+      renderMiniTimeline(pastDays, forecastDays);
+      expect(screen.getByTitle('AM \u2014 6 am to 12 pm')).toBeInTheDocument();
+      expect(screen.getByTitle('PM \u2014 12 pm to 6 pm')).toBeInTheDocument();
+      expect(screen.getByTitle('Night \u2014 6 pm to 6 am')).toBeInTheDocument();
     });
   });
 });

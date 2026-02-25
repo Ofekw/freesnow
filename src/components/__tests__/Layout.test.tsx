@@ -42,29 +42,10 @@ describe('Layout', () => {
     expect(screen.getByLabelText(/change timezone/i)).toBeInTheDocument();
   });
 
-  // Skipped: alert bell is hidden until a better alerts solution is implemented
-  it.skip('disables the snow alerts FAB when notifications are not supported', () => {
+  it('does not render the snow alerts FAB while alerts are hidden', () => {
     renderWithProviders(<Layout />);
-    const btn = screen.getByLabelText(/enable snow alerts/i);
-    expect(btn).toBeInTheDocument();
-    expect(btn).toBeDisabled();
-  });
-
-  // Skipped: alert bell is hidden until a better alerts solution is implemented
-  it.skip('renders the snow alerts FAB enabled when notifications are supported', () => {
-    Object.defineProperty(globalThis, 'Notification', {
-      value: { permission: 'default', requestPermission: async () => 'default' },
-      configurable: true,
-      writable: true,
-    });
-    Object.defineProperty(navigator, 'serviceWorker', {
-      value: { ready: Promise.resolve({}) },
-      configurable: true,
-    });
-    renderWithProviders(<Layout />);
-    const btn = screen.getByLabelText(/enable snow alerts/i);
-    expect(btn).toBeInTheDocument();
-    expect(btn).not.toBeDisabled();
+    expect(screen.queryByLabelText(/snow alerts/i)).toBeNull();
+    expect(screen.queryByLabelText(/enable snow alerts/i)).toBeNull();
   });
 
   it('renders footer with Open-Meteo attribution', () => {

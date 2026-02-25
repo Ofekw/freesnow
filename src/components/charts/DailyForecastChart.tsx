@@ -1,9 +1,10 @@
 import { useMemo } from 'react';
 import type { EChartsOption } from 'echarts';
-import type { DailyMetrics } from '@/types';
+import type { DailyMetrics, HourlyMetrics } from '@/types';
 import { cmToIn } from '@/utils/weather';
 import { useUnits } from '@/context/UnitsContext';
 import { useTimezone } from '@/context/TimezoneContext';
+import { splitDayPeriods } from '@/components/snowTimelinePeriods';
 import { BaseChart } from './BaseChart';
 import {
   COLORS,
@@ -18,9 +19,11 @@ import {
 
 interface Props {
   daily: DailyMetrics[];
+  /** Optional hourly data — when provided, snow bars are split into AM/PM/Overnight periods */
+  hourly?: HourlyMetrics[];
 }
 
-export function DailyForecastChart({ daily }: Props) {
+export function DailyForecastChart({ daily, hourly }: Props) {
   const { temp: tempUnit, snow: snowUnit } = useUnits();
   const { fmtDate } = useTimezone();
   const isImperial = tempUnit === 'F';
@@ -29,9 +32,35 @@ export function DailyForecastChart({ daily }: Props) {
     const dates = daily.map((d) =>
       fmtDate(d.date + 'T12:00:00', { weekday: 'short', month: 'numeric', day: 'numeric' }),
     );
-    const snowData = daily.map((d) =>
-      isImperial ? +cmToIn(d.snowfallSum).toFixed(1) : +d.snowfallSum.toFixed(1),
-    );
+
+    const toDisplay = (cm: number) =>
+      isImperial ? +cmToIn(cm).toFixed(1) : +cm.toFixed(1);
+
+    // When hourly data is available, split each day into AM/PM/Overnight periods
+    const hasPeriods = !!hourly;
+    let amData: number[] = [];
+    let pmData: number[] = [];
+    let overnightData: number[] = [];
+    let snowData: number[] = [];
+
+    if (hasPeriods) {
+      // Split all days at once to avoid redundant filtering
+      const allPeriods = daily.map((d) => {
+        const periods = splitDayPeriods(d.date, hourly);
+        return {
+          am: toDisplay(periods.am),
+          pm: toDisplay(periods.pm),
+          overnight: toDisplay(periods.overnight),
+        };
+      });
+      
+      amData = allPeriods.map((p) => p.am);
+      pmData = allPeriods.map((p) => p.pm);
+      overnightData = allPeriods.map((p) => p.overnight);
+    } else {
+      snowData = daily.map((d) => toDisplay(d.snowfallSum));
+    }
+
     const rainData = daily.map((d) =>
       isImperial ? +(d.rainSum / 25.4).toFixed(2) : +(d.rainSum / 10).toFixed(2),
     );
@@ -45,12 +74,73 @@ export function DailyForecastChart({ daily }: Props) {
     const precipLabel = isImperial ? 'in' : snowUnit;
     const tempLabel = `°${tempUnit}`;
 
+    // Build legend items based on whether we have periods or not
+    const legendItems = hasPeriods
+      ? [`Morning (${precipLabel})`, `Afternoon (${precipLabel})`, `Overnight (${precipLabel})`, `Rain (${precipLabel})`, `High ${tempLabel}`, `Low ${tempLabel}`]
+      : [`Snow (${precipLabel})`, `Rain (${precipLabel})`, `High ${tempLabel}`, `Low ${tempLabel}`];
+
+    // Build series array
+    const series: Record<string, unknown>[] = [];
+    
+    if (hasPeriods) {
+      // Add period-specific snow bars side-by-side (not stacked)
+      series.push(
+        makeBarSeries(`Morning (${precipLabel})`, amData, '#fbbf24', {
+          yAxisIndex: 0,
+          barGap: '5%',
+          barCategoryGap: '30%',
+          itemStyle: {
+            color: 'rgba(251, 191, 36, 0.85)',
+            borderRadius: [3, 3, 0, 0],
+          },
+        }),
+        makeBarSeries(`Afternoon (${precipLabel})`, pmData, '#38bdf8', {
+          yAxisIndex: 0,
+          itemStyle: {
+            color: 'rgba(56, 189, 248, 0.85)',
+            borderRadius: [3, 3, 0, 0],
+          },
+        }),
+        makeBarSeries(`Overnight (${precipLabel})`, overnightData, '#8b5cf6', {
+          yAxisIndex: 0,
+          itemStyle: {
+            color: 'rgba(139, 92, 246, 0.85)',
+            borderRadius: [3, 3, 0, 0],
+          },
+        }),
+      );
+    } else {
+      series.push(
+        makeBarSeries(`Snow (${precipLabel})`, snowData, COLORS.snow, { yAxisIndex: 0 }),
+      );
+    }
+
+    series.push(
+      makeBarSeries(`Rain (${precipLabel})`, rainData, COLORS.rain, {
+        yAxisIndex: 0,
+        itemStyle: { color: COLORS.rain, borderRadius: [3, 3, 0, 0], opacity: 0.75 },
+      }),
+      makeLineSeries(`High ${tempLabel}`, highData, COLORS.tempHigh, { yAxisIndex: 1 }),
+      makeLineSeries(`Low ${tempLabel}`, lowData, COLORS.tempLow, { yAxisIndex: 1 }),
+    );
+
+    // Map series names to period time-range descriptions for legend tooltips
+    const periodDescriptions: Record<string, string> = {
+      [`Morning (${precipLabel})`]: 'AM — 6 am to 12 pm',
+      [`Afternoon (${precipLabel})`]: 'PM — 12 pm to 6 pm',
+      [`Overnight (${precipLabel})`]: 'Night — 6 pm to 6 am',
+    };
+
     return {
       tooltip: makeTooltip(),
-      legend: makeLegend(
-        [`Snow (${precipLabel})`, `Rain (${precipLabel})`, `High ${tempLabel}`, `Low ${tempLabel}`],
-        { bottom: 0 },
-      ),
+      legend: makeLegend(legendItems, {
+        bottom: 0,
+        tooltip: {
+          show: hasPeriods,
+          formatter: (params: { name: string }) =>
+            periodDescriptions[params.name] ?? '',
+        },
+      }),
       grid: makeGrid({ bottom: 48, right: 56 }),
       xAxis: [makeCategoryAxis(dates)],
       yAxis: [
@@ -70,17 +160,9 @@ export function DailyForecastChart({ daily }: Props) {
           splitLine: { show: false },
         }),
       ],
-      series: [
-        makeBarSeries(`Snow (${precipLabel})`, snowData, COLORS.snow, { yAxisIndex: 0 }),
-        makeBarSeries(`Rain (${precipLabel})`, rainData, COLORS.rain, {
-          yAxisIndex: 0,
-          itemStyle: { color: COLORS.rain, borderRadius: [3, 3, 0, 0], opacity: 0.75 },
-        }),
-        makeLineSeries(`High ${tempLabel}`, highData, COLORS.tempHigh, { yAxisIndex: 1 }),
-        makeLineSeries(`Low ${tempLabel}`, lowData, COLORS.tempLow, { yAxisIndex: 1 }),
-      ],
+      series,
     };
-  }, [daily, isImperial, tempUnit, snowUnit, fmtDate]);
+  }, [daily, hourly, isImperial, tempUnit, snowUnit, fmtDate]);
 
   return <BaseChart option={option} height={340} group="resort-daily" />;
 }

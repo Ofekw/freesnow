@@ -300,7 +300,7 @@ export function ResortPage() {
             {/* 7-day overview chart */}
             <div className="resort-page__chart-block">
               <h3 className="section-subtitle">7-Day Overview</h3>
-              <DailyForecastChart daily={bandData.daily} />
+              <DailyForecastChart daily={bandData.daily} hourly={bandData.hourly} />
             </div>
 
             {/* Hourly snow breakdown for selected day */}

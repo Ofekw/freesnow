@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, mock } from 'bun:test';
+import { describe, it, expect, beforeEach, afterAll, mock } from 'bun:test';
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Routes, Route, MemoryRouter } from 'react-router-dom';
@@ -34,13 +34,6 @@ mock.module('@/data/openmeteo', () => ({
   fetchHistorical: mock(() => Promise.resolve([])),
 }));
 
-mock.module('@/hooks/useFavorites', () => ({
-  useFavorites: mock(() => ({
-    toggle: mock(() => {}),
-    isFav: mock(() => false),
-  })),
-}));
-
 mock.module('@/hooks/useWeather', () => ({
   useForecast: mock(() => ({
     forecast: {
@@ -67,7 +60,6 @@ mock.module('@/components/charts/HourlyDetailChart', () => ({ HourlyDetailChart:
 mock.module('@/components/charts/HourlySnowChart', () => ({ HourlySnowChart: () => <div /> }));
 mock.module('@/components/charts/FreezingLevelChart', () => ({ FreezingLevelChart: () => <div /> }));
 mock.module('@/components/charts/UVIndexChart', () => ({ UVIndexChart: () => <div /> }));
-mock.module('@/components/SnowTimeline', () => ({ SnowTimeline: () => <div /> }));
 
 const { ResortPage } = await import('@/pages/ResortPage');
 
@@ -159,6 +151,10 @@ beforeEach(() => {
   localStorage.setItem('pow_tz', 'UTC');
   fetchForecastMock.mockClear();
   todayIsoInTimezoneMock.mockClear();
+});
+
+afterAll(() => {
+  mock.restore();
 });
 
 describe('ResortPage timezone behavior', () => {

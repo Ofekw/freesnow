@@ -3,6 +3,7 @@ import { render, screen } from '@testing-library/react';
 import { UnitsProvider } from '@/context/UnitsContext';
 import { TimezoneProvider } from '@/context/TimezoneContext';
 import { SnowTimeline } from '@/components/SnowTimeline';
+import { splitDayPeriods } from '@/components/snowTimelinePeriods';
 import type { DailyMetrics, HourlyMetrics } from '@/types';
 
 function makeDailyMetrics(date: string, snowfallSum: number): DailyMetrics {
@@ -94,6 +95,22 @@ beforeEach(() => {
 });
 
 describe('SnowTimeline', () => {
+  it('splits overnight as target-day evening plus next-day early morning', () => {
+    const hourly: HourlyMetrics[] = [
+      makeHourlyMetrics('2025-01-15T02:00', 10), // same-day early morning: should NOT count for 2025-01-15 overnight
+      makeHourlyMetrics('2025-01-15T07:00', 1),  // AM
+      makeHourlyMetrics('2025-01-15T13:00', 2), // PM
+      makeHourlyMetrics('2025-01-15T20:00', 3), // same-day evening: should count for overnight
+      makeHourlyMetrics('2025-01-16T01:00', 4), // next-day early morning: should count for overnight
+      makeHourlyMetrics('2025-01-16T08:00', 6), // next-day AM: should not count for 2025-01-15
+    ];
+
+    const periods = splitDayPeriods('2025-01-15', hourly);
+    expect(periods.am).toBe(1);
+    expect(periods.pm).toBe(2);
+    expect(periods.overnight).toBe(7);
+  });
+
   it('renders the component with accessible label', () => {
     renderTimeline(recentDays, forecastDays);
     expect(screen.getByRole('figure')).toBeInTheDocument();
@@ -267,6 +284,34 @@ describe('SnowTimeline', () => {
       const { container } = renderTimeline(recentDays, forecastDays, forecastHourly);
       const pastBars = container.querySelectorAll('.snow-timeline__bar--past');
       expect(pastBars.length).toBe(7);
+    });
+  });
+
+  describe('Period legend', () => {
+    it('renders the legend with AM, PM, and Night labels', () => {
+      renderTimeline(recentDays, forecastDays);
+      expect(screen.getByText('AM')).toBeInTheDocument();
+      expect(screen.getByText('PM')).toBeInTheDocument();
+      expect(screen.getByText('Night')).toBeInTheDocument();
+    });
+
+    it('renders color swatches for each period', () => {
+      const { container } = renderTimeline(recentDays, forecastDays);
+      expect(container.querySelector('.snow-timeline__legend-swatch--am')).toBeInTheDocument();
+      expect(container.querySelector('.snow-timeline__legend-swatch--pm')).toBeInTheDocument();
+      expect(container.querySelector('.snow-timeline__legend-swatch--overnight')).toBeInTheDocument();
+    });
+
+    it('legend has aria-label', () => {
+      renderTimeline(recentDays, forecastDays);
+      expect(screen.getByLabelText('Legend')).toBeInTheDocument();
+    });
+
+    it('legend items have hover tooltips explaining time ranges', () => {
+      renderTimeline(recentDays, forecastDays);
+      expect(screen.getByTitle('AM \u2014 6 am to 12 pm')).toBeInTheDocument();
+      expect(screen.getByTitle('PM \u2014 12 pm to 6 pm')).toBeInTheDocument();
+      expect(screen.getByTitle('Night \u2014 6 pm to 6 am')).toBeInTheDocument();
     });
   });
 });

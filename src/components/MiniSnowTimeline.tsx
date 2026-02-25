@@ -10,14 +10,8 @@ import type { DailyMetrics, HourlyMetrics } from '@/types';
 import { useUnits } from '@/context/UnitsContext';
 import { useTimezone } from '@/context/TimezoneContext';
 import { cmToIn } from '@/utils/weather';
+import { splitDayPeriods } from './snowTimelinePeriods';
 import './MiniSnowTimeline.css';
-
-/** Snowfall breakdown for a single period of the day */
-interface PeriodSnow {
-  am: number;
-  pm: number;
-  overnight: number;
-}
 
 interface Props {
   /** All past days (chronological oldest→newest). Last element = yesterday. */
@@ -26,20 +20,6 @@ interface Props {
   forecastDays: DailyMetrics[];
   /** Hourly forecast data — used to split future days into AM/PM/Overnight */
   forecastHourly?: HourlyMetrics[];
-}
-
-function splitDayPeriods(date: string, hourly: HourlyMetrics[]): PeriodSnow {
-  const dayHours = hourly.filter((h) => h.time.startsWith(date));
-  let am = 0;
-  let pm = 0;
-  let overnight = 0;
-  for (const h of dayHours) {
-    const hour = new Date(h.time).getHours();
-    if (hour >= 6 && hour < 12) am += h.snowfall;
-    else if (hour >= 12 && hour < 18) pm += h.snowfall;
-    else overnight += h.snowfall;
-  }
-  return { am, pm, overnight };
 }
 
 export function MiniSnowTimeline({ pastDays, forecastDays, forecastHourly }: Props) {
@@ -212,6 +192,22 @@ export function MiniSnowTimeline({ pastDays, forecastDays, forecastHourly }: Pro
 
       {/* Next 3 days */}
       {futureBars.map(renderFutureBar)}
+
+      {/* Legend */}
+      <div className="mini-timeline__legend" aria-label="Legend">
+        <span className="mini-timeline__legend-item" title="AM — 6 am to 12 pm">
+          <span className="mini-timeline__legend-swatch mini-timeline__legend-swatch--am" />
+          AM
+        </span>
+        <span className="mini-timeline__legend-item" title="PM — 12 pm to 6 pm">
+          <span className="mini-timeline__legend-swatch mini-timeline__legend-swatch--pm" />
+          PM
+        </span>
+        <span className="mini-timeline__legend-item" title="Night — 6 pm to 6 am">
+          <span className="mini-timeline__legend-swatch mini-timeline__legend-swatch--overnight" />
+          Night
+        </span>
+      </div>
     </div>
   );
 }

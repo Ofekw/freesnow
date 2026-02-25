@@ -51,6 +51,45 @@
   color: var(--chart-snow);
 }
 
+/* Legend */
+.snow-timeline__legend {
+  display: flex;
+  justify-content: center;
+  gap: var(--space-md);
+  margin-top: var(--space-sm);
+}
+
+.snow-timeline__legend-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.62rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  cursor: help;
+}
+
+.snow-timeline__legend-swatch {
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.snow-timeline__legend-swatch--am {
+  background: rgba(251, 191, 36, 0.85);
+}
+
+.snow-timeline__legend-swatch--pm {
+  background: rgba(56, 189, 248, 0.85);
+}
+
+.snow-timeline__legend-swatch--overnight {
+  background: rgba(139, 92, 246, 0.85);
+}
+
 /* Chart area */
 .snow-timeline__chart {
   display: flex;
