@@ -104,7 +104,7 @@ export function MiniSnowTimeline({ pastDays, forecastDays, forecastHourly }: Pro
         title={`${fmtDay(bar.date)}: ${bar.snow}${unit}`}
       >
         <span className="mini-timeline__value">
-          {bar.snow > 0 ? bar.snow : ''}
+          {bar.snow}
         </span>
         {hasPeriods ? (
           <div className="mini-timeline__track mini-timeline__track--periods">
@@ -144,7 +144,7 @@ export function MiniSnowTimeline({ pastDays, forecastDays, forecastHourly }: Pro
           title={`${fmtDay(bar.date)}: ${bar.snow}${unit}`}
         >
           <span className="mini-timeline__value">
-            {bar.snow > 0 ? bar.snow : ''}
+            {bar.snow}
           </span>
           <div className="mini-timeline__track">
             <div
@@ -163,7 +163,7 @@ export function MiniSnowTimeline({ pastDays, forecastDays, forecastHourly }: Pro
           title={`Today: ${todayBar.snow}${unit}`}
         >
           <span className="mini-timeline__value mini-timeline__value--today">
-            {todayBar.snow > 0 ? todayBar.snow : ''}
+            {todayBar.snow}
           </span>
           {forecastHourly && (todayBar.am > 0 || todayBar.pm > 0 || todayBar.overnight > 0) ? (
             <div className="mini-timeline__track mini-timeline__track--periods mini-timeline__track--today-border">

@@ -133,6 +133,12 @@ describe('MiniSnowTimeline', () => {
     expect(todayValue!.textContent).toBe('3.9');
   });
 
+  it('shows 0 snowfall values instead of blank labels', () => {
+    const { container } = renderMiniTimeline(pastDays, forecastDays);
+    const values = Array.from(container.querySelectorAll('.mini-timeline__value')).map((el) => el.textContent?.trim());
+    expect(values).toContain('0');
+  });
+
   it('renders future bars with future style when no hourly data', () => {
     const { container } = renderMiniTimeline(pastDays, forecastDays);
     const futureBars = container.querySelectorAll('.mini-timeline__bar--future');

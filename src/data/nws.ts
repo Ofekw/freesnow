@@ -13,6 +13,7 @@
  * values in meters.  We convert to cm and bucket into daily totals.
  */
 
+import { fetchJSONWithRetry } from '@/data/retryFetch';
 const NWS_BASE = 'https://api.weather.gov';
 
 /* ── types ──────────────────────────────────────── */
@@ -49,14 +50,16 @@ export interface NWSDailySnowfall {
 /* ── helpers ────────────────────────────────────── */
 
 async function nwsFetch<T>(url: string): Promise<T> {
-  const res = await fetch(url, {
-    headers: {
-      Accept: 'application/geo+json',
-      'User-Agent': 'Pow.fyi/1.0 (https://github.com/Ofekw/pow-fyi)',
+  return fetchJSONWithRetry<T>(
+    url,
+    {
+      headers: {
+        Accept: 'application/geo+json',
+        'User-Agent': 'Pow.fyi/1.0 (https://github.com/Ofekw/pow-fyi)',
+      },
     },
-  });
-  if (!res.ok) throw new Error(`NWS ${res.status}: ${res.statusText}`);
-  return res.json() as Promise<T>;
+    { label: 'NWS' },
+  );
 }
 
 /**

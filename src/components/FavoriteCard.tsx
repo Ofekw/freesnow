@@ -45,16 +45,37 @@ export function FavoriteCard({ resort, onToggleFavorite }: Props) {
       try {
         // Match ResortPage algorithm: country-aware multi-model forecast.
         const models = modelsForCountry(resort.country);
-        const forecastData = await fetchMultiModelForecast(
-          resort.lat,
-          resort.lon,
-          resort.elevation.mid,
-          'mid',
-          models,
-          16,
-          14,
-          tz,
-        );
+        const [futureResult, pastResult] = await Promise.allSettled([
+          fetchMultiModelForecast(
+            resort.lat,
+            resort.lon,
+            resort.elevation.mid,
+            'mid',
+            models,
+            14,
+            0,
+            tz,
+          ),
+          fetchMultiModelForecast(
+            resort.lat,
+            resort.lon,
+            resort.elevation.mid,
+            'mid',
+            models,
+            2,
+            14,
+            tz,
+          ),
+        ]);
+
+        const futureData = futureResult.status === 'fulfilled' ? futureResult.value : null;
+        const pastData = pastResult.status === 'fulfilled' ? pastResult.value : null;
+        if (!futureData && !pastData) throw new Error('Forecast unavailable');
+
+        const byDate = new Map<string, DailyMetrics>();
+        for (const day of pastData?.daily ?? []) byDate.set(day.date, day);
+        for (const day of futureData?.daily ?? []) byDate.set(day.date, day);
+        const dailyDays = [...byDate.values()].sort((a, b) => a.date.localeCompare(b.date));
 
         // US resorts: apply the same optional NWS blend used by useForecast.
         if (resort.country === 'US') {
@@ -62,8 +83,8 @@ export function FavoriteCard({ resort, onToggleFavorite }: Props) {
             const nwsDays = await fetchNWSSnowfall(resort.lat, resort.lon);
             const nwsMap = nwsToSnowMap(nwsDays);
             if (nwsMap.size > 0) {
-              const blended = blendWithNWS(forecastData.daily, nwsMap);
-              for (const day of forecastData.daily) {
+              const blended = blendWithNWS(dailyDays, nwsMap);
+              for (const day of dailyDays) {
                 const blendedValue = blended.get(day.date);
                 if (blendedValue !== undefined) {
                   day.snowfallSum = blendedValue;
@@ -77,14 +98,13 @@ export function FavoriteCard({ resort, onToggleFavorite }: Props) {
 
         if (cancelled) return;
 
-        const dailyDays = forecastData.daily;
         const today = todayIsoInTimezone(tz);
 
         // Split into past and future days (ISO date strings can be compared lexicographically)
         const pastDays = dailyDays.filter((d) => d.date < today);
         const futureDays = dailyDays.filter((d) => d.date >= today);
 
-        // Summary windows aligned with timeline: past 7d + next 24h + next 7d
+        // Summary windows: past 7d + next 24h + next 7d
         const past7Snow = pastDays
           .slice(-7)
           .reduce((sum: number, d: DailyMetrics) => sum + d.snowfallSum, 0);
@@ -98,10 +118,10 @@ export function FavoriteCard({ resort, onToggleFavorite }: Props) {
         // Tomorrow: second element in futureDays (first is today)
         const tomorrow = futureDays[1] ?? null;
 
-        // Timeline data: past 7 days + today (next 24h) + next 7 days
-        const timelinePast = pastDays.slice(-7);
-        const timelineForecast = futureDays.slice(0, 8);
-        const timelineHourly = forecastData.hourly;
+        // Mini timeline: yesterday + next 4 days total (today + next 3)
+        const timelinePast = pastDays.slice(-1);
+        const timelineForecast = futureDays.slice(0, 4);
+        const timelineHourly = futureData?.hourly ?? pastData?.hourly ?? [];
 
         setSummary({ past7Snow, next24Snow, next7Snow, tomorrow, timelinePast, timelineForecast, timelineHourly });
       } catch {
@@ -190,7 +210,7 @@ export function FavoriteCard({ resort, onToggleFavorite }: Props) {
             </div>
           </div>
 
-          {/* Mini snow timeline: past 7d + next 24h + next 7d */}
+          {/* Mini snow timeline: yesterday + next 4 days total */}
           {summary.timelineForecast.length > 0 && (
             <MiniSnowTimeline
               pastDays={summary.timelinePast}

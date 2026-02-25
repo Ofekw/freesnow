@@ -121,7 +121,7 @@ export function SnowTimeline({ recentDays, forecastDays, forecastHourly }: Props
                 title={`${fmtFull(bar.date)}: ${bar.snow}${unit}`}
               >
                 <span className="snow-timeline__bar-value">
-                  {bar.snow > 0 ? `${bar.snow}` : ''}
+                  {bar.snow}
                 </span>
                 <div className="snow-timeline__bar-track">
                   <div
@@ -138,7 +138,7 @@ export function SnowTimeline({ recentDays, forecastDays, forecastHourly }: Props
         {/* Today bar — split into AM / PM / Overnight when hourly data is available */}
         <div className="snow-timeline__today" aria-label="Today">
           <span className="snow-timeline__bar-value snow-timeline__bar-value--today">
-            {todayBar && todayBar.snow > 0 ? `${todayBar.snow}` : ''}
+            {todayBar ? todayBar.snow : ''}
           </span>
           {todayBar ? (
             forecastHourly && (todayBar.am > 0 || todayBar.pm > 0 || todayBar.overnight > 0) ? (
@@ -188,7 +188,7 @@ export function SnowTimeline({ recentDays, forecastDays, forecastHourly }: Props
                 title={`${fmtFull(bar.date)}: ${bar.snow}${unit}`}
               >
                 <span className="snow-timeline__bar-value">
-                  {bar.snow > 0 ? `${bar.snow}` : ''}
+                  {bar.snow}
                 </span>
                 {hasPeriods ? (
                   <div className="snow-timeline__bar-track snow-timeline__bar-track--periods">
