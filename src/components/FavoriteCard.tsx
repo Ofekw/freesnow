@@ -16,6 +16,8 @@ import './FavoriteCard.css';
 interface Props {
   resort: Resort;
   onToggleFavorite: () => void;
+  /** Stagger delay in ms to spread API requests across favorites */
+  loadDelay?: number;
 }
 
 interface SummaryData {
@@ -30,7 +32,7 @@ interface SummaryData {
   timelineHourly: HourlyMetrics[];
 }
 
-export function FavoriteCard({ resort, onToggleFavorite }: Props) {
+export function FavoriteCard({ resort, onToggleFavorite, loadDelay = 0 }: Props) {
   const [summary, setSummary] = useState<SummaryData | null>(null);
   const [loading, setLoading] = useState(true);
   const { temp, snow, elev } = useUnits();
@@ -129,9 +131,9 @@ export function FavoriteCard({ resort, onToggleFavorite }: Props) {
       }
     }
 
-    void load();
-    return () => { cancelled = true; };
-  }, [resort, tz]);
+    const timer = setTimeout(() => { void load(); }, loadDelay);
+    return () => { cancelled = true; clearTimeout(timer); };
+  }, [resort, tz, loadDelay]);
 
   const tomorrowDesc = summary?.tomorrow
     ? weatherDescription(summary.tomorrow.weatherCode)

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import type { Resort, ResortForecast, BandForecast, HistoricalSnowDay } from '@/types';
 import { fetchHistorical, fetchMultiModelForecast } from '@/data/openmeteo';
+import { clearFetchCache } from '@/data/retryFetch';
 import { fetchNWSSnowfall, nwsToSnowMap } from '@/data/nws';
 import { modelsForCountry, blendWithNWS } from '@/utils/modelAverage';
 import { useTimezone } from '@/context/TimezoneContext';
@@ -39,8 +40,9 @@ export function useForecast(resort: Resort | undefined): UseForecastResult {
   const [error, setError] = useState<string | null>(null);
   const { tz } = useTimezone();
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (fresh = false) => {
     if (!resort) return;
+    if (fresh) clearFetchCache();
     setLoading(true);
     setError(null);
     try {
@@ -86,7 +88,9 @@ export function useForecast(resort: Resort | undefined): UseForecastResult {
     void load();
   }, [load]);
 
-  return { forecast, loading, error, refetch: load };
+  const refetch = useCallback(() => load(true), [load]);
+
+  return { forecast, loading, error, refetch };
 }
 
 /* ── useHistorical ───────────────────────────────── */

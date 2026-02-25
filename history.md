@@ -895,3 +895,25 @@ Prevents conflicting snowfall period totals between different snow visualization
 ### Key files affected
 - `src/utils/modelAverage.ts` -- model name fix + pushNum null-filter helper
 - `src/utils/__tests__/modelAverage.test.ts` -- updated model name assertions + null-handling tests
+
+---
+
+## API Response Cache + Request Deduplication
+
+### What changed
+- Added a URL-keyed in-memory response cache (5 min TTL) and in-flight request deduplication to `fetchJSONWithRetry`. All Open-Meteo and NWS calls now benefit automatically.
+- Errors are never cached — a failed request lets the next caller retry fresh.
+- Exported `clearFetchCache()` so the ResortPage Refresh button bypasses stale cache.
+- Fixed ResortPage `recentDays` effect to always use mid elevation, removing `band` from its dependency array (was causing unnecessary refetches on elevation toggle).
+- Added staggered loading for FavoriteCards on the homepage (200 ms per card) to spread the burst of concurrent API requests.
+
+### Why
+- Open-Meteo 429 rate-limit errors were frequent because every component mount fired fresh API calls with no caching or deduplication. A homepage with 10 US favorites triggered ~60 Open-Meteo + ~20 NWS requests simultaneously.
+
+### Key files affected
+- `src/data/retryFetch.ts` — cache + dedup layer, `clearFetchCache()` export
+- `src/hooks/useWeather.ts` — `clearFetchCache()` on manual refresh
+- `src/pages/ResortPage.tsx` — removed `band` dep from recentDays effect
+- `src/components/FavoriteCard.tsx` — `loadDelay` prop for staggered loading
+- `src/pages/HomePage.tsx` — passes `loadDelay={i * 200}` to FavoriteCards
+- `src/data/__tests__/retryFetch.test.ts` — 5 new tests for cache/dedup behavior
