@@ -806,3 +806,22 @@ On mobile, the previous search-and-filter experience made it hard to see which r
 - `src/components/__tests__/SearchDropdown.test.tsx` — 9 new tests (rendering, ARIA, dropdown open/close, navigation, keyboard, max results)
 - `src/pages/__tests__/HomePage.test.tsx` — Updated 2 tests to handle duplicate text from dropdown + card
 
+---
+
+## Overnight Period Consistency Across Snow Visualizations
+
+### What changed
+Aligned the 7-Day Overview chart bars with the SnowTimeline/MiniSnowTimeline period logic by reusing a shared `splitDayPeriods` helper. Overnight is now consistently calculated as target-day 18:00–23:59 plus next-day 00:00–05:59, instead of combining same-day early-morning with same-day evening.
+
+### Why
+Prevents conflicting snowfall period totals between different snow visualizations and matches user expectations for overnight windows that span midnight.
+
+### Key files affected
+- `src/components/snowTimelinePeriods.ts` — Shared AM/PM/Overnight splitter (cross-date overnight semantics)
+- `src/components/charts/DailyForecastChart.tsx` — 7-Day Overview now uses shared splitter
+- `src/components/MiniSnowTimeline.tsx` — Uses shared splitter for identical behavior with SnowTimeline
+- `src/components/__tests__/SnowTimeline.test.tsx` and `src/components/__tests__/MiniSnowTimeline.test.tsx` — Updated coverage/expectations for cross-date overnight behavior
+
+### Follow-up notes
+- All validation scripts pass after this alignment: `bun run lint`, `bun run build`, `bun run test`.
+

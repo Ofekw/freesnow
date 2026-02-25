@@ -116,7 +116,6 @@ export function UVIndexChart({ daily }: Props) {
         })),
       ],
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [daily, fmtDate]);
 
   return <BaseChart option={option} height={220} />;

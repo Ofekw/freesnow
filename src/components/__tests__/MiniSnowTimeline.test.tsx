@@ -211,4 +211,32 @@ describe('MiniSnowTimeline', () => {
       expect(pastBars).toHaveLength(1);
     });
   });
+
+  describe('Period legend', () => {
+    it('renders the legend with AM, PM, and Night labels', () => {
+      renderMiniTimeline(pastDays, forecastDays);
+      expect(screen.getByText('AM')).toBeInTheDocument();
+      expect(screen.getByText('PM')).toBeInTheDocument();
+      expect(screen.getByText('Night')).toBeInTheDocument();
+    });
+
+    it('renders color swatches for each period', () => {
+      const { container } = renderMiniTimeline(pastDays, forecastDays);
+      expect(container.querySelector('.mini-timeline__legend-swatch--am')).toBeInTheDocument();
+      expect(container.querySelector('.mini-timeline__legend-swatch--pm')).toBeInTheDocument();
+      expect(container.querySelector('.mini-timeline__legend-swatch--overnight')).toBeInTheDocument();
+    });
+
+    it('legend has aria-label', () => {
+      renderMiniTimeline(pastDays, forecastDays);
+      expect(screen.getByLabelText('Legend')).toBeInTheDocument();
+    });
+
+    it('legend items have hover tooltips explaining time ranges', () => {
+      renderMiniTimeline(pastDays, forecastDays);
+      expect(screen.getByTitle('AM \u2014 6 am to 12 pm')).toBeInTheDocument();
+      expect(screen.getByTitle('PM \u2014 12 pm to 6 pm')).toBeInTheDocument();
+      expect(screen.getByTitle('Night \u2014 6 pm to 6 am')).toBeInTheDocument();
+    });
+  });
 });

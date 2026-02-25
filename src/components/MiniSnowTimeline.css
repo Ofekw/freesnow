@@ -5,6 +5,7 @@
   align-items: flex-end;
   gap: 2px;
   padding: var(--space-sm) 0 0;
+  flex-wrap: wrap;
 }
 
 /* Individual column */
@@ -129,4 +130,44 @@
   color: var(--color-accent);
   font-weight: 700;
   letter-spacing: 0.04em;
+}
+
+/* Legend */
+.mini-timeline__legend {
+  display: flex;
+  justify-content: center;
+  gap: var(--space-sm);
+  margin-top: var(--space-xs);
+  width: 100%;
+}
+
+.mini-timeline__legend-item {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 0.52rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  cursor: help;
+}
+
+.mini-timeline__legend-swatch {
+  width: 6px;
+  height: 6px;
+  border-radius: 1.5px;
+  flex-shrink: 0;
+}
+
+.mini-timeline__legend-swatch--am {
+  background: rgba(251, 191, 36, 0.85);
+}
+
+.mini-timeline__legend-swatch--pm {
+  background: rgba(56, 189, 248, 0.85);
+}
+
+.mini-timeline__legend-swatch--overnight {
+  background: rgba(139, 92, 246, 0.85);
 }

@@ -4,6 +4,7 @@ import type { DailyMetrics, HourlyMetrics } from '@/types';
 import { cmToIn } from '@/utils/weather';
 import { useUnits } from '@/context/UnitsContext';
 import { useTimezone } from '@/context/TimezoneContext';
+import { splitDayPeriods } from '@/components/snowTimelinePeriods';
 import { BaseChart } from './BaseChart';
 import {
   COLORS,
@@ -15,31 +16,6 @@ import {
   makeBarSeries,
   makeLineSeries,
 } from './echarts-theme';
-
-/** Snowfall breakdown for a single period of the day */
-interface PeriodSnow {
-  am: number;        // 6 AM – 11:59 AM
-  pm: number;        // 12 PM – 5:59 PM
-  overnight: number; // 6 PM – 5:59 AM (18-23 + 0-5)
-}
-
-/**
- * Sum hourly snowfall for a given date into AM / PM / Overnight buckets.
- * AM = hours 6-11, PM = hours 12-17, Overnight = hours 0-5 + 18-23.
- */
-function splitDayPeriods(date: string, hourly: HourlyMetrics[]): PeriodSnow {
-  const dayHours = hourly.filter((h) => h.time.startsWith(date));
-  let am = 0;
-  let pm = 0;
-  let overnight = 0;
-  for (const h of dayHours) {
-    const hour = new Date(h.time).getHours();
-    if (hour >= 6 && hour < 12) am += h.snowfall;
-    else if (hour >= 12 && hour < 18) pm += h.snowfall;
-    else overnight += h.snowfall; // 0-5 or 18-23
-  }
-  return { am, pm, overnight };
-}
 
 interface Props {
   daily: DailyMetrics[];
@@ -148,9 +124,23 @@ export function DailyForecastChart({ daily, hourly }: Props) {
       makeLineSeries(`Low ${tempLabel}`, lowData, COLORS.tempLow, { yAxisIndex: 1 }),
     );
 
+    // Map series names to period time-range descriptions for legend tooltips
+    const periodDescriptions: Record<string, string> = {
+      [`Morning (${precipLabel})`]: 'AM — 6 am to 12 pm',
+      [`Afternoon (${precipLabel})`]: 'PM — 12 pm to 6 pm',
+      [`Overnight (${precipLabel})`]: 'Night — 6 pm to 6 am',
+    };
+
     return {
       tooltip: makeTooltip(),
-      legend: makeLegend(legendItems, { bottom: 0 }),
+      legend: makeLegend(legendItems, {
+        bottom: 0,
+        tooltip: {
+          show: hasPeriods,
+          formatter: (params: { name: string }) =>
+            periodDescriptions[params.name] ?? '',
+        },
+      }),
       grid: makeGrid({ bottom: 48, right: 56 }),
       xAxis: [makeCategoryAxis(dates)],
       yAxis: [

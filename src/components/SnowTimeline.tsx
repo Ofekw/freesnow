@@ -222,6 +222,22 @@ export function SnowTimeline({ recentDays, forecastDays, forecastHourly }: Props
           })}
         </div>
       </div>
+
+      {/* Legend */}
+      <div className="snow-timeline__legend" aria-label="Legend">
+        <span className="snow-timeline__legend-item" title="AM — 6 am to 12 pm">
+          <span className="snow-timeline__legend-swatch snow-timeline__legend-swatch--am" />
+          AM
+        </span>
+        <span className="snow-timeline__legend-item" title="PM — 12 pm to 6 pm">
+          <span className="snow-timeline__legend-swatch snow-timeline__legend-swatch--pm" />
+          PM
+        </span>
+        <span className="snow-timeline__legend-item" title="Night — 6 pm to 6 am">
+          <span className="snow-timeline__legend-swatch snow-timeline__legend-swatch--overnight" />
+          Night
+        </span>
+      </div>
     </div>
   );
 }

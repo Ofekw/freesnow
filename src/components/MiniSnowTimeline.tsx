@@ -192,6 +192,22 @@ export function MiniSnowTimeline({ pastDays, forecastDays, forecastHourly }: Pro
 
       {/* Next 3 days */}
       {futureBars.map(renderFutureBar)}
+
+      {/* Legend */}
+      <div className="mini-timeline__legend" aria-label="Legend">
+        <span className="mini-timeline__legend-item" title="AM — 6 am to 12 pm">
+          <span className="mini-timeline__legend-swatch mini-timeline__legend-swatch--am" />
+          AM
+        </span>
+        <span className="mini-timeline__legend-item" title="PM — 12 pm to 6 pm">
+          <span className="mini-timeline__legend-swatch mini-timeline__legend-swatch--pm" />
+          PM
+        </span>
+        <span className="mini-timeline__legend-item" title="Night — 6 pm to 6 am">
+          <span className="mini-timeline__legend-swatch mini-timeline__legend-swatch--overnight" />
+          Night
+        </span>
+      </div>
     </div>
   );
 }
