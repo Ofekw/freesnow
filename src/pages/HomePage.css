@@ -3,7 +3,7 @@
   padding: var(--space-2xl) 0 var(--space-lg);
   animation: fadeInUp 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
   position: relative;
-  z-index: 100;
+  z-index: var(--z-base);
 }
 
 .home__title {

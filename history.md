@@ -729,6 +729,14 @@ Direct navigation or bookmarks to deep links (e.g., `https://opensnow.app/resort
 - SnowTimeline now accepts an optional `forecastHourly` prop (`HourlyMetrics[]`) used to compute the period breakdown.
 - ResortPage passes `bandData.hourly` to SnowTimeline.
 
+---
+
+### Snowfall Methodology Info Popover
+- Added a small (i) info icon button in the top-right FAB group, next to the timezone picker.
+- Clicking it opens a popover panel explaining how Pow.fyi calculates snowfall: multi-model averaging, temperature-dependent SLR, freezing level rain/snow split, and NWS cross-referencing.
+- Follows the existing timezone picker pattern (outside-click close, absolute-positioned dropdown, same `.fab` styling).
+- Key files: `src/components/Layout.tsx`, `src/components/Layout.css`, `src/components/__tests__/Layout.test.tsx`.
+
 ### Why it changed
 - Provides powder hunters with finer-grained visibility into *when* significant snowfall is expected during the day, rather than just a daily total.
 

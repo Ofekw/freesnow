@@ -1,5 +1,6 @@
 import { afterEach, describe, it, expect } from 'bun:test';
 import { screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { Layout } from '@/components/Layout';
 import { renderWithProviders } from '@/test/test-utils';
 
@@ -63,5 +64,19 @@ describe('Layout', () => {
     const link = screen.getByText('Submit Feedback');
     expect(link).toBeInTheDocument();
     expect(link).toHaveAttribute('href', 'https://github.com/Ofekw/pow-fyi/issues');
+  });
+
+  it('renders the info FAB', () => {
+    renderWithProviders(<Layout />);
+    expect(screen.getByLabelText(/how snowfall is calculated/i)).toBeInTheDocument();
+  });
+
+  it('shows info popover when info button is clicked', async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<Layout />);
+    const btn = screen.getByLabelText(/how snowfall is calculated/i);
+    await user.click(btn);
+    expect(screen.getByText('How Snowfall is Calculated')).toBeInTheDocument();
+    expect(screen.getByText(/multi-model averaging/i)).toBeInTheDocument();
   });
 });
