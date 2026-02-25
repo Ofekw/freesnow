@@ -68,15 +68,27 @@ function renderMiniTimeline(
   );
 }
 
-// Yesterday
-const pastDays = [makeDailyMetrics('2025-01-14', 5)];
+// Past 7 days
+const pastDays = [
+  makeDailyMetrics('2025-01-08', 5),
+  makeDailyMetrics('2025-01-09', 0),
+  makeDailyMetrics('2025-01-10', 12),
+  makeDailyMetrics('2025-01-11', 3),
+  makeDailyMetrics('2025-01-12', 0),
+  makeDailyMetrics('2025-01-13', 8),
+  makeDailyMetrics('2025-01-14', 2),
+];
 
-// Today + next 3 days
+// Today + next 7 days
 const forecastDays = [
   makeDailyMetrics('2025-01-15', 10),
   makeDailyMetrics('2025-01-16', 15),
   makeDailyMetrics('2025-01-17', 0),
   makeDailyMetrics('2025-01-18', 8),
+  makeDailyMetrics('2025-01-19', 6),
+  makeDailyMetrics('2025-01-20', 0),
+  makeDailyMetrics('2025-01-21', 4),
+  makeDailyMetrics('2025-01-22', 5),
 ];
 
 beforeEach(() => {
@@ -94,17 +106,16 @@ describe('MiniSnowTimeline', () => {
     expect(screen.getByText('Today')).toBeInTheDocument();
   });
 
-  it('renders 5 columns total (1 yesterday + 1 today + 3 future)', () => {
+  it('renders 15 columns total (7 past + 1 today + 7 future)', () => {
     const { container } = renderMiniTimeline(pastDays, forecastDays);
     const cols = container.querySelectorAll('.mini-timeline__col');
-    // 1 yesterday + 1 today (with --today modifier) + 3 future = 5
-    expect(cols).toHaveLength(5);
+    expect(cols).toHaveLength(15);
   });
 
-  it('renders yesterday bar with past style', () => {
+  it('renders past bars with past style', () => {
     const { container } = renderMiniTimeline(pastDays, forecastDays);
     const pastBars = container.querySelectorAll('.mini-timeline__bar--past');
-    expect(pastBars).toHaveLength(1);
+    expect(pastBars).toHaveLength(7);
   });
 
   it('renders today bar with today style when no hourly data', () => {
@@ -122,11 +133,16 @@ describe('MiniSnowTimeline', () => {
     expect(todayValue!.textContent).toBe('3.9');
   });
 
+  it('shows 0 snowfall values instead of blank labels', () => {
+    const { container } = renderMiniTimeline(pastDays, forecastDays);
+    const values = Array.from(container.querySelectorAll('.mini-timeline__value')).map((el) => el.textContent?.trim());
+    expect(values).toContain('0');
+  });
+
   it('renders future bars with future style when no hourly data', () => {
     const { container } = renderMiniTimeline(pastDays, forecastDays);
     const futureBars = container.querySelectorAll('.mini-timeline__bar--future');
-    // 2 future days with snow (15 and 8), 1 with 0
-    expect(futureBars).toHaveLength(3);
+    expect(futureBars).toHaveLength(7);
   });
 
   it('handles empty past days gracefully', () => {
@@ -139,39 +155,44 @@ describe('MiniSnowTimeline', () => {
   it('handles empty forecast days gracefully', () => {
     const { container } = renderMiniTimeline(pastDays, []);
     const cols = container.querySelectorAll('.mini-timeline__col');
-    // Only yesterday
-    expect(cols).toHaveLength(1);
+    // Only past days
+    expect(cols).toHaveLength(7);
   });
 
-  it('only shows 3 future days even if more provided', () => {
+  it('only shows 7 future days even if more provided', () => {
     const extraForecast = [
       ...forecastDays,
-      makeDailyMetrics('2025-01-19', 20),
-      makeDailyMetrics('2025-01-20', 5),
+      makeDailyMetrics('2025-01-23', 20),
+      makeDailyMetrics('2025-01-24', 5),
     ];
     const { container } = renderMiniTimeline(pastDays, extraForecast);
     const cols = container.querySelectorAll('.mini-timeline__col');
-    // 1 yesterday + 1 today + 3 future = 5 (not 7)
-    expect(cols).toHaveLength(5);
+    expect(cols).toHaveLength(15);
   });
 
-  it('only uses last past day even if more provided', () => {
+  it('only uses last 7 past days even if more provided', () => {
     const extraPast = [
-      makeDailyMetrics('2025-01-12', 3),
-      makeDailyMetrics('2025-01-13', 7),
-      makeDailyMetrics('2025-01-14', 5),
+      makeDailyMetrics('2025-01-04', 1),
+      makeDailyMetrics('2025-01-05', 2),
+      makeDailyMetrics('2025-01-06', 3),
+      makeDailyMetrics('2025-01-07', 4),
+      ...pastDays,
     ];
     const { container } = renderMiniTimeline(extraPast, forecastDays);
     const pastBars = container.querySelectorAll('.mini-timeline__bar--past');
-    expect(pastBars).toHaveLength(1);
+    expect(pastBars).toHaveLength(7);
   });
 
   describe('AM/PM/Overnight period sub-bars', () => {
     const forecastHourly = [
       ...makeHourlyDay('2025-01-15', 3, 4, 3),  // today
       ...makeHourlyDay('2025-01-16', 6, 6, 3),  // tomorrow
-      ...makeHourlyDay('2025-01-17', 0, 0, 0),  // no snow
-      ...makeHourlyDay('2025-01-18', 0, 5, 3),  // some snow
+      ...makeHourlyDay('2025-01-17', 1, 0, 0),
+      ...makeHourlyDay('2025-01-18', 0, 5, 3),
+      ...makeHourlyDay('2025-01-19', 2, 0, 0),
+      ...makeHourlyDay('2025-01-20', 0, 0, 4),
+      ...makeHourlyDay('2025-01-21', 3, 1, 0),
+      ...makeHourlyDay('2025-01-22', 0, 2, 1),
     ];
 
     it('renders AM/PM/Overnight sub-bars for days with snow', () => {
@@ -179,11 +200,9 @@ describe('MiniSnowTimeline', () => {
       const amBars = container.querySelectorAll('.mini-timeline__bar--am');
       const pmBars = container.querySelectorAll('.mini-timeline__bar--pm');
       const overnightBars = container.querySelectorAll('.mini-timeline__bar--overnight');
-      // Cross-date overnight can make the prior day non-zero from next-day 00-05 snowfall,
-      // so all four forecast days can render period bars in this fixture.
-      expect(amBars.length).toBe(4);
-      expect(pmBars.length).toBe(4);
-      expect(overnightBars.length).toBe(4);
+      expect(amBars.length).toBe(8);
+      expect(pmBars.length).toBe(8);
+      expect(overnightBars.length).toBe(8);
     });
 
     it('renders today with period sub-bars and accent border', () => {
@@ -205,10 +224,10 @@ describe('MiniSnowTimeline', () => {
       expect(todayBar).toBeInTheDocument();
     });
 
-    it('yesterday bar stays unchanged with hourly data', () => {
+    it('past bars stay unchanged with hourly data', () => {
       const { container } = renderMiniTimeline(pastDays, forecastDays, forecastHourly);
       const pastBars = container.querySelectorAll('.mini-timeline__bar--past');
-      expect(pastBars).toHaveLength(1);
+      expect(pastBars).toHaveLength(7);
     });
   });
 

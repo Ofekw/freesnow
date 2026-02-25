@@ -3,7 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { Star } from 'lucide-react';
 import { WeatherIcon } from '@/components/icons';
 import type { Resort, DailyMetrics, HourlyMetrics } from '@/types';
-import { fetchForecast } from '@/data/openmeteo';
+import { fetchMultiModelForecast } from '@/data/openmeteo';
+import { fetchNWSSnowfall, nwsToSnowMap } from '@/data/nws';
+import { modelsForCountry, blendWithNWS } from '@/utils/modelAverage';
 import { weatherDescription, fmtTemp, fmtSnow, fmtElevation } from '@/utils/weather';
 import { todayIsoInTimezone } from '@/utils/dateKey';
 import { useUnits } from '@/context/UnitsContext';
@@ -17,9 +19,9 @@ interface Props {
 }
 
 interface SummaryData {
-  last14Snow: number;      // cm
+  past7Snow: number;       // cm
+  next24Snow: number;      // cm
   next7Snow: number;       // cm
-  next14Snow: number;      // cm
   tomorrow: DailyMetrics | null;
   /** Past days for the mini timeline (chronological, oldest → newest) */
   timelinePast: DailyMetrics[];
@@ -41,43 +43,87 @@ export function FavoriteCard({ resort, onToggleFavorite }: Props) {
     async function load() {
       setLoading(true);
       try {
-        // Fetch forecast with 14 past days (avoids archive API lag)
-        // and 16 future days (for 14-day forecast plus buffer)
-        const forecastData = await fetchForecast(
-          resort.lat, resort.lon, resort.elevation.mid, 'mid', 16, 14, tz,
-        ).catch(() => null);
+        // Match ResortPage algorithm: country-aware multi-model forecast.
+        const models = modelsForCountry(resort.country);
+        const [futureResult, pastResult] = await Promise.allSettled([
+          fetchMultiModelForecast(
+            resort.lat,
+            resort.lon,
+            resort.elevation.mid,
+            'mid',
+            models,
+            14,
+            0,
+            tz,
+          ),
+          fetchMultiModelForecast(
+            resort.lat,
+            resort.lon,
+            resort.elevation.mid,
+            'mid',
+            models,
+            2,
+            14,
+            tz,
+          ),
+        ]);
+
+        const futureData = futureResult.status === 'fulfilled' ? futureResult.value : null;
+        const pastData = pastResult.status === 'fulfilled' ? pastResult.value : null;
+        if (!futureData && !pastData) throw new Error('Forecast unavailable');
+
+        const byDate = new Map<string, DailyMetrics>();
+        for (const day of pastData?.daily ?? []) byDate.set(day.date, day);
+        for (const day of futureData?.daily ?? []) byDate.set(day.date, day);
+        const dailyDays = [...byDate.values()].sort((a, b) => a.date.localeCompare(b.date));
+
+        // US resorts: apply the same optional NWS blend used by useForecast.
+        if (resort.country === 'US') {
+          try {
+            const nwsDays = await fetchNWSSnowfall(resort.lat, resort.lon);
+            const nwsMap = nwsToSnowMap(nwsDays);
+            if (nwsMap.size > 0) {
+              const blended = blendWithNWS(dailyDays, nwsMap);
+              for (const day of dailyDays) {
+                const blendedValue = blended.get(day.date);
+                if (blendedValue !== undefined) {
+                  day.snowfallSum = blendedValue;
+                }
+              }
+            }
+          } catch {
+            // NWS is optional — continue with model-only data.
+          }
+        }
 
         if (cancelled) return;
 
-        const dailyDays = forecastData?.daily ?? [];
         const today = todayIsoInTimezone(tz);
 
         // Split into past and future days (ISO date strings can be compared lexicographically)
         const pastDays = dailyDays.filter((d) => d.date < today);
         const futureDays = dailyDays.filter((d) => d.date >= today);
 
-        // Calculate last 14 days snowfall (take only the most recent 14 days)
-        const last14Snow = pastDays
-          .slice(-14)
+        // Summary windows: past 7d + next 24h + next 7d
+        const past7Snow = pastDays
+          .slice(-7)
           .reduce((sum: number, d: DailyMetrics) => sum + d.snowfallSum, 0);
+        const next24Snow = futureDays[0]?.snowfallSum ?? 0;
 
-        // Calculate next 7 and 14 days from future days
+        // Calculate next 7 days from future days (including today)
         const next7Snow = futureDays
           .slice(0, 7)
-          .reduce((sum: number, d: DailyMetrics) => sum + d.snowfallSum, 0);
-        const next14Snow = futureDays
-          .slice(0, 14)
           .reduce((sum: number, d: DailyMetrics) => sum + d.snowfallSum, 0);
 
         // Tomorrow: second element in futureDays (first is today)
         const tomorrow = futureDays[1] ?? null;
 
-        // Timeline data: yesterday (last past day) + today + next 3 future
-        const timelinePast = pastDays.slice(-1); // just yesterday
-        const timelineForecast = futureDays.slice(0, 4); // today + next 3
-        const timelineHourly = forecastData?.hourly ?? [];
+        // Mini timeline: yesterday + next 4 days total (today + next 3)
+        const timelinePast = pastDays.slice(-1);
+        const timelineForecast = futureDays.slice(0, 4);
+        const timelineHourly = futureData?.hourly ?? pastData?.hourly ?? [];
 
-        setSummary({ last14Snow, next7Snow, next14Snow, tomorrow, timelinePast, timelineForecast, timelineHourly });
+        setSummary({ past7Snow, next24Snow, next7Snow, tomorrow, timelinePast, timelineForecast, timelineHourly });
       } catch {
         // Silently fail — card still shows static info
       } finally {
@@ -151,20 +197,20 @@ export function FavoriteCard({ resort, onToggleFavorite }: Props) {
           {/* Snow summary grid */}
           <div className="fav-card__snow-grid">
             <div className="fav-card__snow-stat">
-              <span className="fav-card__snow-label">Last 14 Days</span>
-              <span className="fav-card__snow-value">{fmtSnow(summary.last14Snow, snow)}</span>
+              <span className="fav-card__snow-label">Past 7 Days</span>
+              <span className="fav-card__snow-value">{fmtSnow(summary.past7Snow, snow)}</span>
+            </div>
+            <div className="fav-card__snow-stat">
+              <span className="fav-card__snow-label">Next 24h</span>
+              <span className="fav-card__snow-value">{fmtSnow(summary.next24Snow, snow)}</span>
             </div>
             <div className="fav-card__snow-stat">
               <span className="fav-card__snow-label">Next 7 Days</span>
               <span className="fav-card__snow-value">{fmtSnow(summary.next7Snow, snow)}</span>
             </div>
-            <div className="fav-card__snow-stat">
-              <span className="fav-card__snow-label">Next 14 Days</span>
-              <span className="fav-card__snow-value">{fmtSnow(summary.next14Snow, snow)}</span>
-            </div>
           </div>
 
-          {/* 5-day mini snow timeline */}
+          {/* Mini snow timeline: yesterday + next 4 days total */}
           {summary.timelineForecast.length > 0 && (
             <MiniSnowTimeline
               pastDays={summary.timelinePast}

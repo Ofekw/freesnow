@@ -1,9 +1,9 @@
 /**
- * MiniSnowTimeline — Compact 5-day snow bar for favorite cards.
+ * MiniSnowTimeline — Compact snow bar for favorite cards.
  *
- * Shows yesterday + today + next 3 days as a compact horizontal bar chart.
- * Today is highlighted. Future days show AM / PM / Overnight sub-bars
- * when hourly data is available.
+ * Shows past 7 days + today + next 7 days.
+ * Today is highlighted as the next 24h bar. Future days show AM / PM /
+ * Overnight sub-bars when hourly data is available.
  */
 import { useMemo } from 'react';
 import type { DailyMetrics, HourlyMetrics } from '@/types';
@@ -27,19 +27,20 @@ export function MiniSnowTimeline({ pastDays, forecastDays, forecastHourly }: Pro
   const { fmtDate } = useTimezone();
   const isImperial = snow === 'in';
 
-  const { yesterdayBar, todayBar, futureBars, maxSnow } = useMemo(() => {
+  const { pastBars, todayBar, futureBars, maxSnow } = useMemo(() => {
     const toDisplay = (cm: number) =>
       isImperial ? +cmToIn(cm).toFixed(1) : +cm.toFixed(1);
 
-    // Yesterday = last past day
-    const yesterday = pastDays.length > 0 ? pastDays[pastDays.length - 1] : null;
-    const yesterdayBar = yesterday
-      ? { date: yesterday.date, snow: toDisplay(yesterday.snowfallSum) }
-      : null;
+    // Last 7 past days
+    const past = pastDays.slice(-7);
+    const pastBars = past.map((d) => ({
+      date: d.date,
+      snow: toDisplay(d.snowfallSum),
+    }));
 
     // Today = first forecast day
     const [todayDay, ...rest] = forecastDays;
-    const future = rest.slice(0, 3); // next 3 days
+    const future = rest.slice(0, 7); // next 7 days
 
     const todayPeriods = todayDay && forecastHourly
       ? splitDayPeriods(todayDay.date, forecastHourly)
@@ -71,7 +72,7 @@ export function MiniSnowTimeline({ pastDays, forecastDays, forecastHourly }: Pro
       ? [todayBar.am, todayBar.pm, todayBar.overnight]
       : (todayBar ? [todayBar.snow] : []);
     const allSnow = [
-      ...(yesterdayBar ? [yesterdayBar.snow] : []),
+      ...pastBars.map((b) => b.snow),
       ...todayPeriodSnow,
       ...futureBars.flatMap((b) =>
         forecastHourly ? [b.am, b.pm, b.overnight] : [b.snow],
@@ -79,7 +80,7 @@ export function MiniSnowTimeline({ pastDays, forecastDays, forecastHourly }: Pro
     ];
     const maxSnow = Math.max(...allSnow, 0.1);
 
-    return { yesterdayBar, todayBar, futureBars, maxSnow };
+    return { pastBars, todayBar, futureBars, maxSnow };
   }, [pastDays, forecastDays, forecastHourly, isImperial]);
 
   const fmtDay = (dateStr: string) =>
@@ -103,7 +104,7 @@ export function MiniSnowTimeline({ pastDays, forecastDays, forecastHourly }: Pro
         title={`${fmtDay(bar.date)}: ${bar.snow}${unit}`}
       >
         <span className="mini-timeline__value">
-          {bar.snow > 0 ? bar.snow : ''}
+          {bar.snow}
         </span>
         {hasPeriods ? (
           <div className="mini-timeline__track mini-timeline__track--periods">
@@ -134,25 +135,26 @@ export function MiniSnowTimeline({ pastDays, forecastDays, forecastHourly }: Pro
   };
 
   return (
-    <div className="mini-timeline" role="figure" aria-label="5-day snow timeline">
-      {/* Yesterday */}
-      {yesterdayBar && (
+    <div className="mini-timeline" role="figure" aria-label="Snow timeline showing past and upcoming snowfall">
+      {/* Past 7 days */}
+      {pastBars.map((bar) => (
         <div
+          key={bar.date}
           className="mini-timeline__col"
-          title={`${fmtDay(yesterdayBar.date)}: ${yesterdayBar.snow}${unit}`}
+          title={`${fmtDay(bar.date)}: ${bar.snow}${unit}`}
         >
           <span className="mini-timeline__value">
-            {yesterdayBar.snow > 0 ? yesterdayBar.snow : ''}
+            {bar.snow}
           </span>
           <div className="mini-timeline__track">
             <div
               className="mini-timeline__bar mini-timeline__bar--past"
-              style={{ height: `${Math.max((yesterdayBar.snow / maxSnow) * 100, yesterdayBar.snow > 0 ? 4 : 0)}%` }}
+              style={{ height: `${Math.max((bar.snow / maxSnow) * 100, bar.snow > 0 ? 4 : 0)}%` }}
             />
           </div>
-          <span className="mini-timeline__label">{fmtDay(yesterdayBar.date)}</span>
+          <span className="mini-timeline__label">{fmtDay(bar.date)}</span>
         </div>
-      )}
+      ))}
 
       {/* Today */}
       {todayBar && (
@@ -161,7 +163,7 @@ export function MiniSnowTimeline({ pastDays, forecastDays, forecastHourly }: Pro
           title={`Today: ${todayBar.snow}${unit}`}
         >
           <span className="mini-timeline__value mini-timeline__value--today">
-            {todayBar.snow > 0 ? todayBar.snow : ''}
+            {todayBar.snow}
           </span>
           {forecastHourly && (todayBar.am > 0 || todayBar.pm > 0 || todayBar.overnight > 0) ? (
             <div className="mini-timeline__track mini-timeline__track--periods mini-timeline__track--today-border">
@@ -190,7 +192,7 @@ export function MiniSnowTimeline({ pastDays, forecastDays, forecastHourly }: Pro
         </div>
       )}
 
-      {/* Next 3 days */}
+      {/* Next 7 days */}
       {futureBars.map(renderFutureBar)}
 
       {/* Legend */}

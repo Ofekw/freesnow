@@ -1,4 +1,4 @@
-/* ── MiniSnowTimeline — compact 5-day bar chart for favorite cards ── */
+/* ── MiniSnowTimeline — compact past 7d + next 24h + next 7d chart ── */
 
 .mini-timeline {
   display: flex;

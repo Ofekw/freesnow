@@ -13,6 +13,7 @@ import type {
 import { recalcHourly, recalcDailyFromHourly } from '@/utils/snowRecalc';
 import { averageHourlyArrays, averageDailyArrays } from '@/utils/modelAverage';
 import type { RawHourly, RawDaily } from '@/utils/modelAverage';
+import { fetchJSONWithRetry } from '@/data/retryFetch';
 
 const BASE = 'https://api.open-meteo.com/v1';
 
@@ -25,9 +26,7 @@ function qs(params: Record<string, string | number | boolean>): string {
 }
 
 async function fetchJSON<T>(url: string): Promise<T> {
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`Open-Meteo ${res.status}: ${res.statusText}`);
-  return res.json() as Promise<T>;
+  return fetchJSONWithRetry<T>(url, undefined, { label: 'Open-Meteo' });
 }
 
 /* ── Forecast ───────────────────────────────────── */
@@ -95,6 +94,55 @@ export interface OMForecastResponse {
     wind_speed_10m_max: number[];
     wind_gusts_10m_max: number[];
   };
+}
+
+const REQUIRED_HOURLY_KEYS: Array<keyof OMForecastResponse['hourly']> = [
+  'time',
+  'temperature_2m',
+  'apparent_temperature',
+  'relative_humidity_2m',
+  'precipitation',
+  'rain',
+  'snowfall',
+  'precipitation_probability',
+  'weather_code',
+  'wind_speed_10m',
+  'wind_direction_10m',
+  'wind_gusts_10m',
+  'freezing_level_height',
+];
+
+const REQUIRED_DAILY_KEYS: Array<keyof OMForecastResponse['daily']> = [
+  'time',
+  'weather_code',
+  'temperature_2m_max',
+  'temperature_2m_min',
+  'apparent_temperature_max',
+  'apparent_temperature_min',
+  'uv_index_max',
+  'precipitation_sum',
+  'rain_sum',
+  'snowfall_sum',
+  'precipitation_probability_max',
+  'wind_speed_10m_max',
+  'wind_gusts_10m_max',
+];
+
+function hasArrayFields<T extends string>(
+  record: unknown,
+  requiredKeys: readonly T[],
+): record is Record<T, unknown[]> {
+  if (!record || typeof record !== 'object') return false;
+  return requiredKeys.every((key) => Array.isArray((record as Record<string, unknown>)[key]));
+}
+
+export function isForecastResponsePayload(data: unknown): data is OMForecastResponse {
+  if (!data || typeof data !== 'object') return false;
+  const candidate = data as { hourly?: unknown; daily?: unknown };
+  return (
+    hasArrayFields(candidate.hourly, REQUIRED_HOURLY_KEYS)
+    && hasArrayFields(candidate.daily, REQUIRED_DAILY_KEYS)
+  );
 }
 
 function mapHourly(raw: OMForecastResponse['hourly'], elevation: number): HourlyMetrics[] {
@@ -228,7 +276,11 @@ export async function fetchMultiModelForecast(
   );
 
   const successful = results
-    .filter((r): r is PromiseFulfilledResult<OMForecastResponse> => r.status === 'fulfilled')
+    .filter(
+      (r): r is PromiseFulfilledResult<OMForecastResponse> => (
+        r.status === 'fulfilled' && isForecastResponsePayload(r.value)
+      ),
+    )
     .map((r) => r.value);
 
   // If no model succeeded, fall back to the default best_match call

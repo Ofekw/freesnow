@@ -173,6 +173,12 @@ describe('SnowTimeline', () => {
     expect(todayValue!.textContent).toBe('3.9');
   });
 
+  it('shows 0 snowfall values instead of blank labels', () => {
+    const { container } = renderTimeline(recentDays, forecastDays);
+    const values = Array.from(container.querySelectorAll('.snow-timeline__bar-value')).map((el) => el.textContent?.trim());
+    expect(values).toContain('0');
+  });
+
   it('handles empty recent days gracefully', () => {
     renderTimeline([], forecastDays);
     expect(screen.getByText('Today')).toBeInTheDocument();
