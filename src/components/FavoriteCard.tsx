@@ -19,9 +19,9 @@ interface Props {
 }
 
 interface SummaryData {
-  last14Snow: number;      // cm
+  past7Snow: number;       // cm
+  next24Snow: number;      // cm
   next7Snow: number;       // cm
-  next14Snow: number;      // cm
   tomorrow: DailyMetrics | null;
   /** Past days for the mini timeline (chronological, oldest → newest) */
   timelinePast: DailyMetrics[];
@@ -84,28 +84,26 @@ export function FavoriteCard({ resort, onToggleFavorite }: Props) {
         const pastDays = dailyDays.filter((d) => d.date < today);
         const futureDays = dailyDays.filter((d) => d.date >= today);
 
-        // Calculate last 14 days snowfall (take only the most recent 14 days)
-        const last14Snow = pastDays
-          .slice(-14)
+        // Summary windows aligned with timeline: past 7d + next 24h + next 7d
+        const past7Snow = pastDays
+          .slice(-7)
           .reduce((sum: number, d: DailyMetrics) => sum + d.snowfallSum, 0);
+        const next24Snow = futureDays[0]?.snowfallSum ?? 0;
 
-        // Calculate next 7 and 14 days from future days
+        // Calculate next 7 days from future days (including today)
         const next7Snow = futureDays
           .slice(0, 7)
-          .reduce((sum: number, d: DailyMetrics) => sum + d.snowfallSum, 0);
-        const next14Snow = futureDays
-          .slice(0, 14)
           .reduce((sum: number, d: DailyMetrics) => sum + d.snowfallSum, 0);
 
         // Tomorrow: second element in futureDays (first is today)
         const tomorrow = futureDays[1] ?? null;
 
-        // Timeline data: yesterday (last past day) + today + next 3 future
-        const timelinePast = pastDays.slice(-1); // just yesterday
-        const timelineForecast = futureDays.slice(0, 4); // today + next 3
+        // Timeline data: past 7 days + today (next 24h) + next 7 days
+        const timelinePast = pastDays.slice(-7);
+        const timelineForecast = futureDays.slice(0, 8);
         const timelineHourly = forecastData.hourly;
 
-        setSummary({ last14Snow, next7Snow, next14Snow, tomorrow, timelinePast, timelineForecast, timelineHourly });
+        setSummary({ past7Snow, next24Snow, next7Snow, tomorrow, timelinePast, timelineForecast, timelineHourly });
       } catch {
         // Silently fail — card still shows static info
       } finally {
@@ -179,20 +177,20 @@ export function FavoriteCard({ resort, onToggleFavorite }: Props) {
           {/* Snow summary grid */}
           <div className="fav-card__snow-grid">
             <div className="fav-card__snow-stat">
-              <span className="fav-card__snow-label">Last 14 Days</span>
-              <span className="fav-card__snow-value">{fmtSnow(summary.last14Snow, snow)}</span>
+              <span className="fav-card__snow-label">Past 7 Days</span>
+              <span className="fav-card__snow-value">{fmtSnow(summary.past7Snow, snow)}</span>
+            </div>
+            <div className="fav-card__snow-stat">
+              <span className="fav-card__snow-label">Next 24h</span>
+              <span className="fav-card__snow-value">{fmtSnow(summary.next24Snow, snow)}</span>
             </div>
             <div className="fav-card__snow-stat">
               <span className="fav-card__snow-label">Next 7 Days</span>
               <span className="fav-card__snow-value">{fmtSnow(summary.next7Snow, snow)}</span>
             </div>
-            <div className="fav-card__snow-stat">
-              <span className="fav-card__snow-label">Next 14 Days</span>
-              <span className="fav-card__snow-value">{fmtSnow(summary.next14Snow, snow)}</span>
-            </div>
           </div>
 
-          {/* 5-day mini snow timeline */}
+          {/* Mini snow timeline: past 7d + next 24h + next 7d */}
           {summary.timelineForecast.length > 0 && (
             <MiniSnowTimeline
               pastDays={summary.timelinePast}

@@ -845,3 +845,22 @@ Prevents conflicting snowfall period totals between different snow visualization
 ### Follow-up notes
 - ResortPage still allows switching elevation bands; homepage cards remain mid-band only, so differences can still appear if users compare against non-mid selected bands.
 
+---
+
+## Favorites Mini Timeline Window Alignment
+
+### What changed
+- Updated FavoriteCard timeline inputs and MiniSnowTimeline rendering to match the SnowTimeline window: past 7 days, next 24 hours (today), and next 7 days.
+- MiniSnowTimeline now renders all 7 past-day bars and up to 7 future-day bars after today, instead of the previous 5-day window (yesterday + today + next 3).
+- Updated FavoriteCard summary stat labels/values to the same windows (Past 7 Days, Next 24h, Next 7 Days) so card totals match the mini timeline horizon.
+- Updated MiniSnowTimeline tests to cover the expanded window and limits.
+
+### Why
+- Keeps snowfall timeline windows consistent between resort detail pages and favorite cards, so users see the same time horizon across both views.
+
+### Key files affected
+- `src/components/FavoriteCard.tsx`
+- `src/components/MiniSnowTimeline.tsx`
+- `src/components/MiniSnowTimeline.css`
+- `src/components/__tests__/MiniSnowTimeline.test.tsx`
+
