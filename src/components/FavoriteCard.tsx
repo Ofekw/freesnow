@@ -20,7 +20,6 @@ interface Props {
 
 interface SummaryData {
   past7Snow: number;       // cm
-  next24Snow: number;      // cm
   next7Snow: number;       // cm
   tomorrow: DailyMetrics | null;
   /** Past days for the mini timeline (chronological, oldest → newest) */
@@ -104,11 +103,10 @@ export function FavoriteCard({ resort, onToggleFavorite }: Props) {
         const pastDays = dailyDays.filter((d) => d.date < today);
         const futureDays = dailyDays.filter((d) => d.date >= today);
 
-        // Summary windows: past 7d + next 24h + next 7d
+        // Summary windows: past 7d + next 7d
         const past7Snow = pastDays
           .slice(-7)
           .reduce((sum: number, d: DailyMetrics) => sum + d.snowfallSum, 0);
-        const next24Snow = futureDays[0]?.snowfallSum ?? 0;
 
         // Calculate next 7 days from future days (including today)
         const next7Snow = futureDays
@@ -123,7 +121,7 @@ export function FavoriteCard({ resort, onToggleFavorite }: Props) {
         const timelineForecast = futureDays.slice(0, 4);
         const timelineHourly = futureData?.hourly ?? pastData?.hourly ?? [];
 
-        setSummary({ past7Snow, next24Snow, next7Snow, tomorrow, timelinePast, timelineForecast, timelineHourly });
+        setSummary({ past7Snow, next7Snow, tomorrow, timelinePast, timelineForecast, timelineHourly });
       } catch {
         // Silently fail — card still shows static info
       } finally {
@@ -176,7 +174,6 @@ export function FavoriteCard({ resort, onToggleFavorite }: Props) {
           <div className="fav-card__skeleton-grid">
             <div className="skeleton skeleton--card" style={{ height: '48px' }} />
             <div className="skeleton skeleton--card" style={{ height: '48px' }} />
-            <div className="skeleton skeleton--card" style={{ height: '48px' }} />
           </div>
         </div>
       ) : summary ? (
@@ -199,10 +196,6 @@ export function FavoriteCard({ resort, onToggleFavorite }: Props) {
             <div className="fav-card__snow-stat">
               <span className="fav-card__snow-label">Past 7 Days</span>
               <span className="fav-card__snow-value">{fmtSnow(summary.past7Snow, snow)}</span>
-            </div>
-            <div className="fav-card__snow-stat">
-              <span className="fav-card__snow-label">Next 24h</span>
-              <span className="fav-card__snow-value">{fmtSnow(summary.next24Snow, snow)}</span>
             </div>
             <div className="fav-card__snow-stat">
               <span className="fav-card__snow-label">Next 7 Days</span>
