@@ -107,27 +107,26 @@ export function DailyForecastChart({ daily, hourly }: Props) {
     const series: Record<string, unknown>[] = [];
     
     if (hasPeriods) {
-      // Add period-specific snow bars with colors matching SnowTimeline
+      // Add period-specific snow bars side-by-side (not stacked)
       series.push(
         makeBarSeries(`Morning (${precipLabel})`, amData, '#fbbf24', {
           yAxisIndex: 0,
-          stack: 'snow',
+          barGap: '5%',
+          barCategoryGap: '30%',
           itemStyle: {
             color: 'rgba(251, 191, 36, 0.85)',
-            borderRadius: [0, 0, 0, 0],
+            borderRadius: [3, 3, 0, 0],
           },
         }),
         makeBarSeries(`Afternoon (${precipLabel})`, pmData, '#38bdf8', {
           yAxisIndex: 0,
-          stack: 'snow',
           itemStyle: {
             color: 'rgba(56, 189, 248, 0.85)',
-            borderRadius: [0, 0, 0, 0],
+            borderRadius: [3, 3, 0, 0],
           },
         }),
         makeBarSeries(`Overnight (${precipLabel})`, overnightData, '#8b5cf6', {
           yAxisIndex: 0,
-          stack: 'snow',
           itemStyle: {
             color: 'rgba(139, 92, 246, 0.85)',
             borderRadius: [3, 3, 0, 0],
