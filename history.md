@@ -878,3 +878,20 @@ Prevents conflicting snowfall period totals between different snow visualization
 - `src/components/FavoriteCard.tsx` — past call `forecastDays` 2 → 5
 - `src/components/__tests__/FavoriteCard.test.tsx` — updated assertion to match new value
 
+
+
+---
+
+## HRRR Model Name Update & Null-Safe Averaging
+
+### What changed
+- Updated Open-Meteo model name from `hrrr` to `ncep_hrrr_conus` in `modelsForCountry()` -- the old name was returning 400 errors.
+- Added null-safe value filtering in `averageHourlyArrays` and `averageDailyArrays`. The `ncep_hrrr_conus` model returns `null` for unsupported fields (e.g. `uv_index_max`) and for hours/days beyond its 48h forecast range. These nulls were leaking into averages and causing toFixed crashes.
+
+### Why
+- Open-Meteo renamed the HRRR model identifier, breaking all US resort forecasts with 400 errors.
+- After fixing the model name, the previously-failing HRRR model started returning data with null values that the averaging code did not handle, causing crashes on resort pages and Forecast unavailable on favorite cards.
+
+### Key files affected
+- `src/utils/modelAverage.ts` -- model name fix + pushNum null-filter helper
+- `src/utils/__tests__/modelAverage.test.ts` -- updated model name assertions + null-handling tests
