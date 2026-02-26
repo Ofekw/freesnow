@@ -1,0 +1,47 @@
+# Pow.fyi
+
+> Pow.fyi is a free, open-source Progressive Web App providing ski resort snow forecasts for North America. It is a client-side React SPA with no backend — all weather data is fetched directly from public APIs in the browser. It serves as an alternative to OpenSnow and Snow-Forecast.
+
+Pow.fyi uses a multi-step snowfall accuracy pipeline rather than showing raw API numbers:
+
+1. **Multi-model averaging** — Fetches 3 weather models in parallel from Open-Meteo (US: GFS + ECMWF + HRRR; Canada: GFS + ECMWF + GEM). Precipitation uses the median; temperature and wind use the mean.
+2. **Variable snow-liquid ratio (SLR)** — Recalculates snowfall from total precipitation using a temperature-dependent SLR (10:1 at 0°C up to 20:1 below −15°C), adjusted for humidity and wind speed.
+3. **Freezing level rain/snow split** — Re-splits precipitation using station elevation vs. freezing level height.
+4. **NWS cross-reference (US only)** — Blends NWS Weather.gov forecaster-adjusted snowfall amounts (30% NWS / 70% model).
+
+Key features:
+
+- 100+ curated North American ski resorts (US and Canada) with metadata (elevation, vertical drop, lifts, acres, coordinates)
+- 7-day forecast with snow, rain, high/low temperatures, feels-like, UV index, and freezing altitude
+- Toggle between Base, Mid, and Top elevation forecasts
+- Hourly detail charts (72 hours) for temperature, precipitation, wind, and snow
+- Snow timeline combining 14-day past + 7-day future snowfall
+- Favorite resorts saved locally on device
+- Imperial/Metric unit toggle and timezone picker (13 NA zones + UTC)
+- Installable PWA with offline app shell support
+
+Routes:
+
+- `/` — Home page: searchable resort catalog grouped by region with favorites section
+- `/resort/{slug}` — Resort detail page with forecast, charts, conditions, and snow timeline (e.g. `/resort/vail-co`, `/resort/whistler-blackcomb-bc`)
+
+Tech stack: React 19, TypeScript, Vite 6 (Bun), Apache ECharts 6, react-router-dom v7, vite-plugin-pwa + Workbox, vanilla CSS (dark theme, responsive), hosted on Azure Static Web Apps.
+
+## Pages
+
+- [Home page](https://pow.fyi/): Browse all resorts grouped by region, search and filter, view favorites with mini forecast previews
+- [Resort detail page — example: Vail](https://pow.fyi/resort/vail-co): 7-day forecast, snow timeline, conditions summary at all elevations, hourly detail charts, UV index, freezing level, and recent 14-day snowfall history
+
+## Data Sources
+
+- [Open-Meteo API](https://open-meteo.com/): Weather forecast and historical data under CC BY 4.0. Models used: GFS (NOAA), ECMWF IFS, HRRR (NOAA high-res), GEM (Environment Canada)
+- [NWS Weather.gov API](https://www.weather.gov/documentation/services-web-api): US snowfall cross-reference, public domain, no API key required
+
+## Source Code
+
+- [GitHub repository](https://github.com/Ofekw/pow-fyi): Full source code, MIT license
+
+## Covered Regions
+
+- **US States**: Alaska, Arizona, California, Colorado, Idaho, Maine, Michigan, Minnesota, Montana, Nevada, New Hampshire, New Mexico, New York, Oregon, Pennsylvania, Utah, Vermont, Washington, West Virginia, Wisconsin, Wyoming
+- **Canadian Provinces/Territories**: Alberta, British Columbia, Manitoba, New Brunswick, Newfoundland and Labrador, Northwest Territories, Nova Scotia, Ontario, Quebec, Saskatchewan, Yukon
