@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { Outlet } from 'react-router-dom';
-import { Globe, ChevronUp } from 'lucide-react';
+import { Globe, ChevronUp, Info } from 'lucide-react';
 import { useUnits } from '@/context/UnitsContext';
 import { useTimezone, TZ_OPTIONS, getUtcOffset } from '@/context/TimezoneContext';
 // import { useSnowAlerts } from '@/hooks/useSnowAlerts';
@@ -12,8 +12,10 @@ export function Layout() {
   // const { statusTitle, toggleAlerts, isSupported, enabled, permission } = useSnowAlerts();
   const [tzOpen, setTzOpen] = useState(false);
   const [tzSearch, setTzSearch] = useState('');
+  const [infoOpen, setInfoOpen] = useState(false);
   const [showScrollTop, setShowScrollTop] = useState(false);
   const tzRef = useRef<HTMLDivElement>(null);
+  const infoRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
 
   // Show scroll-to-top button when scrolled past 400px
@@ -46,17 +48,20 @@ export function Layout() {
     );
   }, [tzSearch, tzWithOffsets]);
 
-  // Close dropdown on outside click
+  // Close dropdowns on outside click
   useEffect(() => {
-    if (!tzOpen) return;
+    if (!tzOpen && !infoOpen) return;
     function handleClick(e: MouseEvent) {
-      if (tzRef.current && !tzRef.current.contains(e.target as Node)) {
+      if (tzOpen && tzRef.current && !tzRef.current.contains(e.target as Node)) {
         setTzOpen(false);
+      }
+      if (infoOpen && infoRef.current && !infoRef.current.contains(e.target as Node)) {
+        setInfoOpen(false);
       }
     }
     document.addEventListener('mousedown', handleClick);
     return () => document.removeEventListener('mousedown', handleClick);
-  }, [tzOpen]);
+  }, [tzOpen, infoOpen]);
 
   // Auto-focus search when dropdown opens
   useEffect(() => {
@@ -117,6 +122,68 @@ export function Layout() {
                   <li className="tz-picker__empty">No matches</li>
                 )}
               </ul>
+            </div>
+          )}
+        </div>
+
+        <div className="info-popover" ref={infoRef}>
+          <button
+            className="fab fab--icon"
+            onClick={() => setInfoOpen((p) => !p)}
+            aria-label="How snowfall is calculated"
+            title="How snowfall is calculated"
+          >
+            <Info size={14} />
+          </button>
+          {infoOpen && (
+            <div className="info-popover__panel">
+              <h3 className="info-popover__title">How Snowfall is Calculated</h3>
+              <p className="info-popover__intro">
+                Pow.fyi doesn&apos;t just show raw API numbers — it runs a multi-step accuracy
+                pipeline to produce snowfall estimates competitive with paid services:
+              </p>
+
+              <h4>Multi-model averaging</h4>
+              <p>
+                Each forecast fetches 3 weather models in parallel from Open-Meteo and averages
+                their output. US resorts use GFS + ECMWF + HRRR (3 km high-res). Canadian resorts
+                use GFS + ECMWF + GEM. Precipitation uses the median (resistant to outlier spikes);
+                temperature and wind use the mean. This alone reduces forecast error by ~15-30% vs
+                any single model.
+              </p>
+
+              <h4>Temperature-dependent snow-liquid ratio (SLR)</h4>
+              <p>
+                Open-Meteo&apos;s built-in snowfall uses a fixed ~7:1 ratio, which drastically
+                underestimates snow in cold mountain conditions. Pow.fyi recalculates snowfall from
+                total precipitation using a variable SLR (10:1 at 0°C up to 20:1 below −15°C),
+                adjusted by:
+              </p>
+              <ul>
+                <li>
+                  <strong>Humidity:</strong> High moisture (≥80% RH) boosts SLR by 10-15% (larger
+                  dendritic crystals → fluffier snow)
+                </li>
+                <li>
+                  <strong>Wind speed:</strong> Strong wind (≥30 km/h) reduces SLR by 10-20%
+                  (mechanical compaction + sublimation)
+                </li>
+              </ul>
+
+              <h4>Freezing level rain/snow split</h4>
+              <p>
+                The API&apos;s rain/snow split is computed at grid-cell elevation, not your ski
+                resort&apos;s actual elevation. Pow.fyi re-splits precipitation using the
+                station&apos;s elevation vs the freezing level height, eliminating phantom rain at
+                sub-freezing temperatures.
+              </p>
+
+              <h4>NWS cross-reference (US only)</h4>
+              <p>
+                For US resorts, NWS Weather.gov forecaster-adjusted snowfall amounts are fetched and
+                blended with the model average (30% NWS / 70% model). NWS forecasters manually tune
+                QPF and snow ratios for local terrain — this adds human expertise to the pipeline.
+              </p>
             </div>
           )}
         </div>

@@ -63,11 +63,12 @@ export function HomePage() {
         <section className="home__region home__favorites">
           <h2 className="home__region-title"><Star size={16} fill="currentColor" className="home__fav-icon" /> Favorites</h2>
           <div className="home__grid">
-            {favoriteResorts.map((r) => (
+            {favoriteResorts.map((r, i) => (
               <FavoriteCard
                 key={r.slug}
                 resort={r}
                 onToggleFavorite={() => toggle(r.slug)}
+                loadDelay={i * 200}
               />
             ))}
           </div>

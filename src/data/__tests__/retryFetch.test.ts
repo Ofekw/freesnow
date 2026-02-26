@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, mock } from 'bun:test';
-import { fetchJSONWithRetry } from '@/data/retryFetch';
+import { fetchJSONWithRetry, clearFetchCache } from '@/data/retryFetch';
 
 const originalFetch = globalThis.fetch;
 
@@ -26,6 +26,7 @@ describe('fetchJSONWithRetry', () => {
   beforeEach(() => {
     steps = [];
     fetchMock.mockClear();
+    clearFetchCache();
     globalThis.fetch = fetchMock as unknown as typeof fetch;
   });
 
@@ -80,6 +81,79 @@ describe('fetchJSONWithRetry', () => {
     );
 
     expect(result.ok).toBe(true);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('returns cached response on second call to same URL', async () => {
+    steps = [jsonResponse({ val: 1 })];
+
+    const url = 'https://example.com/cache-hit';
+    const opts = { cacheTtlMs: 60_000, maxRetries: 0, baseDelayMs: 0, maxDelayMs: 0 };
+    const first = await fetchJSONWithRetry<{ val: number }>(url, undefined, opts);
+
+    // Second call should NOT trigger fetch
+    const second = await fetchJSONWithRetry<{ val: number }>(url, undefined, opts);
+
+    expect(first.val).toBe(1);
+    expect(second.val).toBe(1);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not cache when cacheTtlMs is 0', async () => {
+    steps = [jsonResponse({ val: 1 }), jsonResponse({ val: 2 })];
+
+    const url = 'https://example.com/no-cache';
+    const opts = { cacheTtlMs: 0, maxRetries: 0, baseDelayMs: 0, maxDelayMs: 0 };
+    const first = await fetchJSONWithRetry<{ val: number }>(url, undefined, opts);
+    const second = await fetchJSONWithRetry<{ val: number }>(url, undefined, opts);
+
+    expect(first.val).toBe(1);
+    expect(second.val).toBe(2);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('deduplicates concurrent requests to the same URL', async () => {
+    steps = [jsonResponse({ val: 42 })];
+
+    const url = 'https://example.com/dedup';
+    const opts = { cacheTtlMs: 60_000, maxRetries: 0, baseDelayMs: 0, maxDelayMs: 0 };
+    const [a, b] = await Promise.all([
+      fetchJSONWithRetry<{ val: number }>(url, undefined, opts),
+      fetchJSONWithRetry<{ val: number }>(url, undefined, opts),
+    ]);
+
+    expect(a.val).toBe(42);
+    expect(b.val).toBe(42);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not cache failed requests', async () => {
+    steps = [
+      jsonResponse({ err: true }, 400, 'Bad Request'),
+      jsonResponse({ ok: true }),
+    ];
+
+    const url = 'https://example.com/no-cache-err';
+    const opts = { cacheTtlMs: 60_000, maxRetries: 0, baseDelayMs: 0, maxDelayMs: 0 };
+
+    await expect(fetchJSONWithRetry(url, undefined, opts)).rejects.toThrow();
+
+    const result = await fetchJSONWithRetry<{ ok: boolean }>(url, undefined, opts);
+    expect(result.ok).toBe(true);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('clearFetchCache invalidates cached responses', async () => {
+    steps = [jsonResponse({ val: 1 }), jsonResponse({ val: 2 })];
+
+    const url = 'https://example.com/clear-cache';
+    const opts = { cacheTtlMs: 60_000, maxRetries: 0, baseDelayMs: 0, maxDelayMs: 0 };
+    await fetchJSONWithRetry(url, undefined, opts);
+
+    clearFetchCache();
+
+    const result = await fetchJSONWithRetry<{ val: number }>(url, undefined, opts);
+    expect(result.val).toBe(2);
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 });

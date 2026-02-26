@@ -16,6 +16,8 @@ import './FavoriteCard.css';
 interface Props {
   resort: Resort;
   onToggleFavorite: () => void;
+  /** Stagger delay in ms to spread API requests across favorites */
+  loadDelay?: number;
 }
 
 interface SummaryData {
@@ -30,7 +32,7 @@ interface SummaryData {
   timelineHourly: HourlyMetrics[];
 }
 
-export function FavoriteCard({ resort, onToggleFavorite }: Props) {
+export function FavoriteCard({ resort, onToggleFavorite, loadDelay = 0 }: Props) {
   const [summary, setSummary] = useState<SummaryData | null>(null);
   const [loading, setLoading] = useState(true);
   const { temp, snow, elev } = useUnits();
@@ -129,8 +131,12 @@ export function FavoriteCard({ resort, onToggleFavorite }: Props) {
       }
     }
 
-    void load();
-    return () => { cancelled = true; };
+    // NOTE: loadDelay is intentionally excluded from deps — it's a stable mount-time
+    // stagger value that shouldn't re-trigger fetches if the parent re-renders.
+    // Changing tz will re-fetch all cards with their stagger delays again.
+    const timer = setTimeout(() => { void load(); }, loadDelay);
+    return () => { cancelled = true; clearTimeout(timer); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [resort, tz]);
 
   const tomorrowDesc = summary?.tomorrow
