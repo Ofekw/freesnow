@@ -153,6 +153,7 @@ export function makeLegend(
   opts: Record<string, unknown> = {},
 ): Record<string, unknown> {
   return {
+    type: 'scroll',
     data,
     bottom: 0,
     left: 'center',
@@ -165,6 +166,9 @@ export function makeLegend(
     itemGap: 16,
     itemWidth: 14,
     itemHeight: 10,
+    pageTextStyle: { color: COLORS.textMuted },
+    pageIconColor: COLORS.textMuted,
+    pageIconInactiveColor: '#475569',
     ...opts,
   };
 }

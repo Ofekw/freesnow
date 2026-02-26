@@ -141,7 +141,7 @@ export function DailyForecastChart({ daily, hourly }: Props) {
             periodDescriptions[params.name] ?? '',
         },
       }),
-      grid: makeGrid({ bottom: 48, right: 56 }),
+      grid: makeGrid({ bottom: 60, right: 56 }),
       xAxis: [makeCategoryAxis(dates)],
       yAxis: [
         makeValueAxis({
