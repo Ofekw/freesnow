@@ -20,14 +20,18 @@ interface Props {
   hourly: HourlyMetrics[];
   /** Label shown above chart, e.g. "Monday 2/10" */
   dayLabel: string;
+  /** Pre-computed daily snowfall total (cm) — uses the 6AM–6AM "ski day"
+   *  window and includes NWS blending when available. When omitted the
+   *  component falls back to summing the hourly array. */
+  snowfallSum?: number;
 }
 
-export function HourlySnowChart({ hourly, dayLabel }: Props) {
+export function HourlySnowChart({ hourly, dayLabel, snowfallSum }: Props) {
   const { snow: snowUnit } = useUnits();
   const { fmtDate } = useTimezone();
   const isImperial = snowUnit === 'in';
 
-  const totalSnow = hourly.reduce((s, h) => s + h.snowfall, 0);
+  const totalSnow = snowfallSum ?? hourly.reduce((s, h) => s + h.snowfall, 0);
   const totalDisplay = isImperial
     ? `${cmToIn(totalSnow).toFixed(1)}"`
     : `${totalSnow.toFixed(1)}cm`;
