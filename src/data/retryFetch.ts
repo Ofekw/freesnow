@@ -22,10 +22,26 @@ interface CacheEntry {
 const responseCache = new Map<string, CacheEntry>();
 const inflightRequests = new Map<string, Promise<unknown>>();
 
-/** Clear all cached responses and in-flight tracking. */
+/**
+ * Build a cache key from URL + RequestInit so that different methods/bodies
+ * on the same URL don't collide.  All current callers are GETs with no init,
+ * but this guards against future misuse.
+ */
+function cacheKey(url: string, init?: RequestInit): string {
+  if (!init) return url;
+  // Include method + body (covers POST/PUT with different payloads)
+  const method = init.method?.toUpperCase() ?? 'GET';
+  if (method === 'GET' && !init.body) return url;
+  return `${method}:${url}:${init.body ?? ''}`;
+}
+
+/**
+ * Clear all cached responses so the next fetch hits the network.
+ * In-flight requests are left alone — they will resolve naturally and
+ * populate the (now-empty) cache when they complete.
+ */
 export function clearFetchCache(): void {
   responseCache.clear();
-  inflightRequests.clear();
 }
 
 function shouldRetryStatus(status: number): boolean {
@@ -67,16 +83,22 @@ export async function fetchJSONWithRetry<T>(
   options: RetryFetchOptions = {},
 ): Promise<T> {
   const cacheTtlMs = options.cacheTtlMs ?? DEFAULT_CACHE_TTL_MS;
+  const key = cacheKey(url, init);
 
   // Check response cache
   if (cacheTtlMs > 0) {
-    const cached = responseCache.get(url);
+    const cached = responseCache.get(key);
     if (cached && Date.now() < cached.expiresAt) {
       return cached.data as T;
     }
 
-    // Deduplicate concurrent requests to the same URL
-    const inflight = inflightRequests.get(url);
+    // Deduplicate concurrent requests to the same URL + init.
+    // NOTE: There is a narrow race window where a request can fail and its
+    // `finally` block hasn't run yet — a new caller arriving in that gap
+    // could miss the inflight entry and start a duplicate fetch.  This is
+    // harmless (just an extra network call) and not worth the complexity of
+    // fixing with extra synchronisation.
+    const inflight = inflightRequests.get(key);
     if (inflight) {
       return inflight as Promise<T>;
     }
@@ -126,13 +148,13 @@ export async function fetchJSONWithRetry<T>(
 
   if (cacheTtlMs > 0) {
     const promise = doFetch();
-    inflightRequests.set(url, promise);
+    inflightRequests.set(key, promise);
     try {
       const result = await promise;
-      responseCache.set(url, { data: result, expiresAt: Date.now() + cacheTtlMs });
+      responseCache.set(key, { data: result, expiresAt: Date.now() + cacheTtlMs });
       return result;
     } finally {
-      inflightRequests.delete(url);
+      inflightRequests.delete(key);
     }
   }
 

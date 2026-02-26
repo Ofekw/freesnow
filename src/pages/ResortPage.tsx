@@ -58,6 +58,10 @@ export function ResortPage() {
     if (!resort) return;
     let cancelled = false;
     setHistLoading(true);
+    // Always fetch recent days at mid elevation — this avoids unnecessary
+    // refetches when the user toggles the elevation band picker.  The recent
+    // snowfall history is a rough reference, so mid-elevation is an acceptable
+    // approximation regardless of the selected band.
     fetchForecast(resort.lat, resort.lon, resort.elevation.mid, 'mid', 1, 14, tz)
       .then((result) => {
         if (!cancelled) {

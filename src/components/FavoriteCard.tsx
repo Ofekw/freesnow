@@ -131,9 +131,13 @@ export function FavoriteCard({ resort, onToggleFavorite, loadDelay = 0 }: Props)
       }
     }
 
+    // NOTE: loadDelay is intentionally excluded from deps — it's a stable mount-time
+    // stagger value that shouldn't re-trigger fetches if the parent re-renders.
+    // Changing tz will re-fetch all cards with their stagger delays again.
     const timer = setTimeout(() => { void load(); }, loadDelay);
     return () => { cancelled = true; clearTimeout(timer); };
-  }, [resort, tz, loadDelay]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [resort, tz]);
 
   const tomorrowDesc = summary?.tomorrow
     ? weatherDescription(summary.tomorrow.weatherCode)
