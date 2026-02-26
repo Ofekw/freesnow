@@ -54,6 +54,7 @@ export function UVIndexChart({ daily }: Props) {
         },
       }),
       legend: {
+        type: 'scroll' as const,
         data: [
           { name: 'Low (0–2)', itemStyle: { color: COLORS.uvLow } },
           { name: 'Moderate (3–5)', itemStyle: { color: COLORS.uvModerate } },
@@ -68,8 +69,11 @@ export function UVIndexChart({ daily }: Props) {
         itemWidth: 10,
         itemHeight: 10,
         selectedMode: false as const,
+        pageTextStyle: { color: COLORS.textMuted },
+        pageIconColor: COLORS.textMuted,
+        pageIconInactiveColor: '#475569',
       },
-      grid: makeGrid({ bottom: 48, left: 36, right: 12 }),
+      grid: makeGrid({ bottom: 56, left: 36, right: 12 }),
       xAxis: [makeCategoryAxis(dates)],
       yAxis: [
         makeValueAxis({
