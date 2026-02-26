@@ -183,8 +183,23 @@ function mapDaily(
   hourly: HourlyMetrics[],
 ): DailyMetrics[] {
   return raw.time.map((t, i) => {
-    // Recompute daily snow/rain sums from recalculated hourly data
-    const dayHourly = hourly.filter((h) => h.time.startsWith(t));
+    // Recompute daily snow/rain sums using the 6 AM–6 AM "ski day" window:
+    // target-day hours 6-23 + next-day hours 0-5.
+    // This matches the period definitions in splitDayPeriods (AM 6-11,
+    // PM 12-17, Overnight 18-23 + next-day 0-5).
+    const nextDate = new Date(`${t}T00:00:00Z`);
+    nextDate.setUTCDate(nextDate.getUTCDate() + 1);
+    const nextDateStr = nextDate.toISOString().slice(0, 10);
+
+    const dayHourly = hourly.filter((h) => {
+      const hDate = h.time.slice(0, 10);
+      const hHour = Number(h.time.slice(11, 13));
+      // Target day hours 6-23
+      if (hDate === t && hHour >= 6) return true;
+      // Next day hours 0-5 (overnight continuation)
+      if (hDate === nextDateStr && hHour < 6) return true;
+      return false;
+    });
     const { snowfallSum, rainSum } = recalcDailyFromHourly(
       dayHourly.map((h) => h.snowfall),
       dayHourly.map((h) => h.rain),

@@ -111,6 +111,26 @@ describe('SnowTimeline', () => {
     expect(periods.overnight).toBe(7);
   });
 
+  it('hours 0-5 of target day belong to previous day overnight, not target day', () => {
+    // Snow at 3 AM on Jan 16 should count for Jan 15's overnight, not Jan 16's periods
+    const hourly: HourlyMetrics[] = [
+      makeHourlyMetrics('2025-01-16T03:00', 5),  // should be Jan 15 overnight
+      makeHourlyMetrics('2025-01-16T09:00', 2),  // Jan 16 AM
+    ];
+
+    // For Jan 16: the 3 AM snow should NOT appear in any bucket
+    const jan16 = splitDayPeriods('2025-01-16', hourly);
+    expect(jan16.am).toBe(2);
+    expect(jan16.pm).toBe(0);
+    expect(jan16.overnight).toBe(0);
+
+    // For Jan 15: the 3 AM snow on Jan 16 SHOULD appear in overnight
+    const jan15 = splitDayPeriods('2025-01-15', hourly);
+    expect(jan15.am).toBe(0);
+    expect(jan15.pm).toBe(0);
+    expect(jan15.overnight).toBe(5);
+  });
+
   it('renders the component with accessible label', () => {
     renderTimeline(recentDays, forecastDays);
     expect(screen.getByRole('figure')).toBeInTheDocument();

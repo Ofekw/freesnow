@@ -308,10 +308,11 @@ export function ResortPage() {
             </div>
 
             {/* Hourly snow breakdown for selected day */}
-            {selectedDayHourly.length > 0 && (
+            {selectedDayHourly.length > 0 && selectedDay && (
               <HourlySnowChart
                 hourly={selectedDayHourly}
                 dayLabel={selectedDayLabel}
+                snowfallSum={selectedDay.snowfallSum}
               />
             )}
           </section>
