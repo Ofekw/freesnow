@@ -12,6 +12,7 @@ export function HomePage() {
   const { favorites, toggle, isFav } = useFavorites();
 
   const isEasterEgg = query.toLowerCase() === 'ofek';
+  const isMfjhEasterEgg = query.toLowerCase() === 'mfjh';
   const filtered = useMemo(() => searchResorts(query), [query]);
 
   // Handle Escape key to dismiss easter egg
@@ -26,6 +27,13 @@ export function HomePage() {
       return () => document.removeEventListener('keydown', handleEscape);
     }
   }, [isEasterEgg]);
+
+  // Auto-dismiss MFJH easter egg after grow animation (1.5s) + 1s pause
+  useEffect(() => {
+    if (!isMfjhEasterEgg) return;
+    const timer = setTimeout(() => setQuery(''), 2500);
+    return () => clearTimeout(timer);
+  }, [isMfjhEasterEgg, setQuery]);
 
   const favoriteResorts = useMemo(
     () =>
@@ -110,6 +118,23 @@ export function HomePage() {
             src="https://github.com/user-attachments/assets/1e0bab4c-6ead-4f02-9256-7e21fef78eb9"
             alt="Easter egg"
             className="home__easter-egg-image"
+          />
+        </div>
+      )}
+
+      {/* Easter Egg: MFJH — image grows to fill the page then returns home */}
+      {isMfjhEasterEgg && (
+        <div
+          className="home__easter-egg home__easter-egg--mfjh"
+          data-testid="mfjh-easter-egg"
+          role="dialog"
+          aria-modal="true"
+          aria-label="MFJH Easter egg"
+        >
+          <img
+            src="https://github.com/user-attachments/assets/9d9621ed-c9dd-4afb-b023-8214f456f3a4"
+            alt="MFJH Easter egg"
+            className="home__easter-egg-image--mfjh"
           />
         </div>
       )}

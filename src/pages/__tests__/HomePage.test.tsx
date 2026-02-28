@@ -113,4 +113,58 @@ describe('HomePage', () => {
 
     expect(screen.queryByTestId('easter-egg')).not.toBeInTheDocument();
   });
+
+  it('shows MFJH easter egg when searching for "mfjh"', async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<HomePage />);
+
+    const search = screen.getByPlaceholderText('Search resorts…');
+    await user.type(search, 'mfjh');
+
+    expect(screen.getByTestId('mfjh-easter-egg')).toBeInTheDocument();
+  });
+
+  it('shows MFJH easter egg when searching for "MFJH" (uppercase)', async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<HomePage />);
+
+    const search = screen.getByPlaceholderText('Search resorts…');
+    await user.type(search, 'MFJH');
+
+    expect(screen.getByTestId('mfjh-easter-egg')).toBeInTheDocument();
+  });
+
+  it('shows MFJH easter egg when searching for "MfJh" (mixed case)', async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<HomePage />);
+
+    const search = screen.getByPlaceholderText('Search resorts…');
+    await user.type(search, 'MfJh');
+
+    expect(screen.getByTestId('mfjh-easter-egg')).toBeInTheDocument();
+  });
+
+  it('does not show MFJH easter egg for partial match', async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<HomePage />);
+
+    const search = screen.getByPlaceholderText('Search resorts…');
+    await user.type(search, 'mfj');
+
+    expect(screen.queryByTestId('mfjh-easter-egg')).not.toBeInTheDocument();
+  });
+
+  it('MFJH easter egg uses correct image src', async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<HomePage />);
+
+    const search = screen.getByPlaceholderText('Search resorts…');
+    await user.type(search, 'mfjh');
+
+    const img = screen.getByAltText('MFJH Easter egg');
+    expect(img).toHaveAttribute(
+      'src',
+      'https://github.com/user-attachments/assets/9d9621ed-c9dd-4afb-b023-8214f456f3a4',
+    );
+  });
 });
