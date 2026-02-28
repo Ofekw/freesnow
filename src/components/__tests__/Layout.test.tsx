@@ -63,7 +63,7 @@ describe('Layout', () => {
     renderWithProviders(<Layout />);
     const link = screen.getByText('Submit Feedback');
     expect(link).toBeInTheDocument();
-    expect(link).toHaveAttribute('href', 'https://github.com/Ofekw/pow-fyi/issues');
+    expect(link).toHaveAttribute('href', 'https://github.com/Ofekw/pow.fyi/issues');
   });
 
   it('renders the info FAB', () => {

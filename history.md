@@ -925,3 +925,21 @@ Prevents conflicting snowfall period totals between different snow visualization
 - `src/components/FavoriteCard.tsx` — `loadDelay` prop for staggered loading
 - `src/pages/HomePage.tsx` — passes `loadDelay={i * 200}` to FavoriteCards
 - `src/data/__tests__/retryFetch.test.ts` — 5 new tests for cache/dedup behavior
+
+---
+
+## GitHub Repository Link Fixes
+
+### What changed
+- Updated all remaining GitHub URLs from the old `pow-fyi` slug to the correct `pow.fyi` repository path.
+- Corrected footer open-source and feedback links, metadata/docs repository links, and the NWS User-Agent repository reference.
+- Updated the layout test expectation to match the corrected feedback URL.
+
+### Why
+- Ensures all in-app, metadata, and API-identification links point to the live repository and issue tracker, avoiding broken navigation.
+
+### Key files affected
+- `src/components/Layout.tsx`
+- `src/components/__tests__/Layout.test.tsx`
+- `public/llms.txt`
+- `src/data/nws.ts`

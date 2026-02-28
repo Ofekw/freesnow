@@ -39,7 +39,7 @@ Tech stack: React 19, TypeScript, Vite 6 (Bun), Apache ECharts 6, react-router-d
 
 ## Source Code
 
-- [GitHub repository](https://github.com/Ofekw/pow-fyi): Full source code, MIT license
+- [GitHub repository](https://github.com/Ofekw/pow.fyi): Full source code, MIT license
 
 ## Covered Regions
 

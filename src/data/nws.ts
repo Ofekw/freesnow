@@ -55,7 +55,7 @@ async function nwsFetch<T>(url: string): Promise<T> {
     {
       headers: {
         Accept: 'application/geo+json',
-        'User-Agent': 'Pow.fyi/1.0 (https://github.com/Ofekw/pow-fyi)',
+        'User-Agent': 'Pow.fyi/1.0 (https://github.com/Ofekw/pow.fyi)',
       },
     },
     { label: 'NWS' },
