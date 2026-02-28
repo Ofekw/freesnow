@@ -108,6 +108,29 @@
   animation: spin 3s linear infinite;
 }
 
+/* MFJH Easter Egg — image grows from center to fill full page */
+.home__easter-egg--mfjh {
+  background: #000;
+  cursor: default;
+  overflow: hidden;
+}
+
+.home__easter-egg-image--mfjh {
+  object-fit: cover;
+  animation: mfjhGrow 1.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@keyframes mfjhGrow {
+  from {
+    width: 150px;
+    height: 150px;
+  }
+  to {
+    width: 100vw;
+    height: 100vh;
+  }
+}
+
 @keyframes spin {
   from {
     transform: rotate(0deg);

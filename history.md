@@ -943,3 +943,21 @@ Prevents conflicting snowfall period totals between different snow visualization
 - `src/components/__tests__/Layout.test.tsx`
 - `public/llms.txt`
 - `src/data/nws.ts`
+
+---
+
+## MFJH Easter Egg
+
+### What changed
+- Added a new easter egg triggered when "mfjh" is typed into the search bar (case-insensitive).
+- The easter egg shows an image that starts small (150×150px) in the center of the page and grows to fill the full viewport over 1.5 seconds via a CSS `mfjhGrow` keyframe animation.
+- After the animation completes, the overlay pauses for 1 second then automatically resets the search query, returning to the home page (total timeout: 2.5 seconds).
+- Added 5 new tests covering detection, case-insensitivity, partial-match exclusion, and image src validation.
+
+### Why
+- Issue request to add a fun easter egg for "mfjh" searches with a grow-to-fullscreen animation.
+
+### Key files affected
+- `src/pages/HomePage.tsx` — `isMfjhEasterEgg` flag, auto-dismiss `useEffect`, overlay JSX
+- `src/pages/HomePage.css` — `.home__easter-egg--mfjh`, `.home__easter-egg-image--mfjh`, `@keyframes mfjhGrow`
+- `src/pages/__tests__/HomePage.test.tsx` — 5 new MFJH easter egg tests
